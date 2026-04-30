@@ -17,29 +17,41 @@ export const useAuthStore = defineStore('auth', () => {
   const isParent = computed(() => role.value === 'parent')
 
   async function fetchProfile(id) {
-    const { data } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', id)
-      .single()
-    profile.value = data
-    
-    if (data?.role === 'teacher') {
-      const { data: tData } = await supabase
-        .from('teachers')
+    try {
+      const { data, error } = await supabase
+        .from('users')
         .select('*')
-        .eq('user_id', id)
-        .maybeSingle()
-      teacherProfile.value = tData
+        .eq('id', id)
+        .single()
+      if (error) throw error
+      profile.value = data
+      
+      if (data?.role === 'teacher') {
+        const { data: tData } = await supabase
+          .from('teachers')
+          .select('*')
+          .eq('user_id', id)
+          .maybeSingle()
+        teacherProfile.value = tData
+      }
+    } catch (e) {
+      console.error('Error fetching profile:', e)
     }
   }
 
   async function init() {
+    console.log('AuthStore: Initializing...')
     const { data } = await supabase.auth.getSession()
     session.value = data.session
-    if (session.value) await fetchProfile(session.value.user.id)
+    if (session.value) {
+      console.log('AuthStore: Session found for', session.value.user.email)
+      await fetchProfile(session.value.user.id)
+    } else {
+      console.log('AuthStore: No session found')
+    }
 
-    supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log('AuthStore: Auth state change:', event)
       session.value = newSession
       if (newSession) {
         await fetchProfile(newSession.user.id)

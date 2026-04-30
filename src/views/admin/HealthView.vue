@@ -1,6 +1,103 @@
-﻿<template>
-  <div class="page-placeholder">
-    <div class="page-header"><h1 class="page-title">HealthView</h1></div>
-    <div class="card"><div class="card-body"><p style="color:var(--text-muted)">This page is under construction.</p></div></div>
+<script setup>
+import { ref, onMounted, computed } from 'vue'
+import { supabase } from '@/lib/supabase'
+import { formatDate } from '@/utils/formatDate'
+
+const activeTab = ref('growth')
+const loading = ref(true)
+const growth = ref([])
+const vaccinations = ref([])
+const search = ref('')
+
+onMounted(async () => {
+  await loadData()
+})
+
+async function loadData() {
+  loading.value = true
+  const [gr, vac] = await Promise.all([
+    supabase.from('student_growth').select('*, students(full_name, class_id, classes(class_name))').order('date', { ascending: false }),
+    supabase.from('student_vaccinations').select('*, students(full_name, class_id, classes(class_name))').order('date', { ascending: false })
+  ])
+  growth.value = gr.data || []
+  vaccinations.value = vac.data || []
+  loading.value = false
+}
+
+const filteredGrowth = computed(() => {
+  const q = search.value.toLowerCase()
+  return growth.value.filter(g => g.students?.full_name.toLowerCase().includes(q))
+})
+
+const filteredVaccinations = computed(() => {
+  const q = search.value.toLowerCase()
+  return vaccinations.value.filter(v => v.students?.full_name.toLowerCase().includes(q) || v.name.toLowerCase().includes(q))
+})
+</script>
+
+<template>
+  <div>
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Health Center</h1>
+        <p class="page-subtitle">School-wide student health and growth records</p>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab-item" :class="{ active: activeTab === 'growth' }" @click="activeTab = 'growth'">📈 Growth Records</div>
+      <div class="tab-item" :class="{ active: activeTab === 'vaccinations' }" @click="activeTab = 'vaccinations'">💉 Vaccinations</div>
+    </div>
+
+    <div class="filters-bar">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input class="form-input" v-model="search" placeholder="Search by student or vaccine…" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div v-if="loading" class="card-body">
+        <div v-for="i in 5" :key="i" class="skeleton" style="height:48px;margin-bottom:10px;border-radius:8px;"></div>
+      </div>
+      
+      <!-- Growth Table -->
+      <div v-else-if="activeTab === 'growth'" class="table-wrapper">
+        <table v-if="filteredGrowth.length > 0">
+          <thead><tr><th>Student</th><th>Class</th><th>Date</th><th>Height (cm)</th><th>Weight (kg)</th></tr></thead>
+          <tbody>
+            <tr v-for="g in filteredGrowth" :key="g.id">
+              <td style="font-weight:600;">{{ g.students?.full_name }}</td>
+              <td><span class="badge badge-gray">{{ g.students?.classes?.class_name }}</span></td>
+              <td>{{ formatDate(g.date) }}</td>
+              <td style="font-weight:700;">{{ g.height }}</td>
+              <td style="font-weight:700;">{{ g.weight }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-else class="empty-state">No growth records found.</div>
+      </div>
+
+      <!-- Vaccinations Table -->
+      <div v-else-if="activeTab === 'vaccinations'" class="table-wrapper">
+        <table v-if="filteredVaccinations.length > 0">
+          <thead><tr><th>Student</th><th>Class</th><th>Vaccine</th><th>Date</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr v-for="v in filteredVaccinations" :key="v.id">
+              <td style="font-weight:600;">{{ v.students?.full_name }}</td>
+              <td><span class="badge badge-gray">{{ v.students?.classes?.class_name }}</span></td>
+              <td style="font-weight:600;">{{ v.name }}</td>
+              <td>{{ formatDate(v.date) }}</td>
+              <td>
+                <span class="badge" :class="v.completed ? 'badge-green' : 'badge-yellow'">
+                  {{ v.completed ? '✅ Completed' : '⏳ Pending' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div v-else class="empty-state">No vaccination records found.</div>
+      </div>
+    </div>
   </div>
 </template>

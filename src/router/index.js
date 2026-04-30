@@ -37,6 +37,7 @@ const router = createRouter({
         { path: 'attendance/students', name: 'admin-attendance-students', component: () => import('@/views/admin/AttendanceStudentsView.vue') },
         { path: 'attendance/teachers', name: 'admin-attendance-teachers', component: () => import('@/views/admin/AttendanceTeachersView.vue') },
         { path: 'scores',          name: 'admin-scores',          component: () => import('@/views/admin/ScoresView.vue') },
+        { path: 'health',          name: 'admin-health',          component: () => import('@/views/admin/HealthView.vue') },
         { path: 'sick-days',       name: 'admin-sick-days',       component: () => import('@/views/admin/SickDaysView.vue') },
         { path: 'holidays',        name: 'admin-holidays',        component: () => import('@/views/admin/HolidaysView.vue') },
         { path: 'budget',          name: 'admin-budget',          component: () => import('@/views/admin/BudgetView.vue') },
@@ -103,18 +104,23 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
-  // Initialize auth state on first navigation
-  if (!auth.session && !auth.isLoggedIn) {
+  // Initialize auth state if session is not loaded
+  if (!auth.isLoggedIn) {
+    console.log('Router: No logged in user, trying init...')
     await auth.init()
   }
+
+  console.log('Router: target:', to.path, 'isLoggedIn:', auth.isLoggedIn, 'role:', auth.role)
 
   if (to.meta.public) return true
 
   if (to.meta.requiresAuth && !auth.isLoggedIn) {
+    console.warn('Router: Requires auth but not logged in, redirecting to login')
     return { name: 'login' }
   }
 
   if (to.meta.role && auth.role !== to.meta.role) {
+    console.warn('Router: Role mismatch. Expected:', to.meta.role, 'Found:', auth.role)
     return { name: 'unauthorized' }
   }
 
