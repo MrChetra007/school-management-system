@@ -1,0 +1,97 @@
+<script setup>
+import { ref, onMounted } from 'vue'
+import { supabase } from '@/lib/supabase'
+import { formatDate } from '@/utils/formatDate'
+
+const overdueRecords = ref([])
+const loading = ref(true)
+const toast = ref(null)
+
+onMounted(loadOverdue)
+
+async function loadOverdue() {
+  loading.value = true
+  // Note: We'll fetch records with status 'overdue' 
+  // and also those with status 'borrowed' where due_date < today
+  const today = new Date().toISOString().split('T')[0]
+  const { data } = await supabase
+    .from('book_borrows')
+    .select('*, books(title), students(full_name, phone_number)')
+    .or(`status.eq.overdue,and(status.eq.borrowed,due_date.lt.${today})`)
+    .order('due_date', { ascending: true })
+  
+  overdueRecords.value = data || []
+  loading.value = false
+}
+
+async function markReturned(record) {
+  const { error } = await supabase
+    .from('book_borrows')
+    .update({ status: 'returned', return_date: new Date().toISOString().split('T')[0] })
+    .eq('id', record.id)
+  
+  if (!error) {
+    const { data: book } = await supabase.from('books').select('available_copies').eq('id', record.book_id).single()
+    await supabase.from('books').update({ available_copies: book.available_copies + 1 }).eq('id', record.book_id)
+    showToast('Book returned!', 'success')
+    loadOverdue()
+  }
+}
+
+function showToast(msg, type = 'success') {
+  toast.value = { msg, type }
+  setTimeout(() => { toast.value = null }, 3000)
+}
+</script>
+
+<template>
+  <div>
+    <div class="toast-container">
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+    </div>
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Overdue Books</h1>
+        <p class="page-subtitle">Immediate attention required for these items</p>
+      </div>
+    </div>
+
+    <div v-if="loading" class="card card-body">
+      <div v-for="i in 5" :key="i" class="skeleton" style="height:52px;margin-bottom:10px;border-radius:8px;"></div>
+    </div>
+
+    <div v-else class="card">
+      <div v-if="overdueRecords.length === 0" class="empty-state">
+        <div class="empty-state-icon" style="color:var(--success-color);">✅</div>
+        <p class="empty-state-title">No Overdue Books</p>
+        <p class="empty-state-desc">All borrowed items are currently within their due dates.</p>
+      </div>
+      <div v-else class="table-wrapper">
+        <table>
+          <thead>
+            <tr><th>Student</th><th>Book</th><th>Due Date</th><th>Days Overdue</th><th>Contact</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="b in overdueRecords" :key="b.id">
+              <td style="font-weight:600;">{{ b.students?.full_name }}</td>
+              <td>{{ b.books?.title }}</td>
+              <td style="color:var(--danger-color); font-weight:700;">{{ formatDate(b.due_date) }}</td>
+              <td>
+                <span class="badge badge-red">
+                  {{ Math.floor((new Date() - new Date(b.due_date)) / (1000 * 60 * 60 * 24)) }} days
+                </span>
+              </td>
+              <td style="font-size:13px;">{{ b.students?.phone_number || 'No phone' }}</td>
+              <td>
+                <button class="btn btn-secondary btn-sm" @click="markReturned(b)">
+                  Return Now
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>
