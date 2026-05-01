@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { useAcademicYearStore } from '@/stores/academicYear'
 import { toInputDate, formatDate } from '@/utils/formatDate'
 
 // Data
+const yearStore = useAcademicYearStore()
 const students = ref([])
 const classes = ref([])
 const attendance = ref([])
@@ -33,11 +35,19 @@ const attendanceMap = computed(() => {
 onMounted(async () => { await Promise.all([loadClasses(), loadStudents()]) })
 
 async function loadStudents() {
-  const { data } = await supabase.from('students').select('id, full_name, gender, class_id').order('full_name')
+  const { data } = await supabase
+    .from('students')
+    .select('id, full_name, gender, class_id')
+    .eq('academic_year_id', yearStore.selectedYearId)
+    .order('full_name')
   students.value = data || []
 }
 async function loadClasses() {
-  const { data } = await supabase.from('classes').select('id, class_name').order('class_name')
+  const { data } = await supabase
+    .from('classes')
+    .select('id, class_name')
+    .eq('academic_year_id', yearStore.selectedYearId)
+    .order('class_name')
   classes.value = data || []
 }
 

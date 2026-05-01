@@ -2,10 +2,12 @@
 import { ref, computed, watch } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useAcademicYearStore } from '@/stores/academicYear'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const yearStore = useAcademicYearStore()
 const sidebarOpen = ref(false)
 
 // Close sidebar on route change (mobile)
@@ -179,8 +181,17 @@ function isActive(path) {
         </button>
         <div class="top-bar-left">
           <h2 class="top-bar-title">{{ route.meta.title || 'Dashboard' }}</h2>
+          <div v-if="yearStore.selectedYearName" class="year-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M3 9h18M16 2v4M8 2v4M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            </svg>
+            {{ yearStore.selectedYearName }}
+          </div>
         </div>
         <div class="top-bar-right">
+          <button class="btn btn-secondary btn-sm" @click="router.push('/admin/academic-years')">
+            ប្តូរឆ្នាំសិក្សា
+          </button>
           <span class="badge badge-blue">Admin</span>
           <div class="avatar">{{ userInitials }}</div>
         </div>
@@ -195,8 +206,20 @@ function isActive(path) {
 </template>
 
 <style scoped>
-.top-bar-left { flex: 1; }
+.top-bar-left { flex: 1; display: flex; align-items: center; gap: 12px; }
 .top-bar-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+
+.year-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--primary-50);
+  color: var(--primary-700);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
 .top-bar-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
 
 .sidebar-user {

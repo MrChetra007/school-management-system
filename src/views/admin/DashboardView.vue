@@ -2,8 +2,10 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'vue-router'
+import { useAcademicYearStore } from '@/stores/academicYear'
 
 const router = useRouter()
+const yearStore = useAcademicYearStore()
 
 const stats = ref({ students: 0, teachers: 0, classes: 0, books: 0, budget_income: 0, budget_expense: 0 })
 const recentStudents = ref([])
@@ -11,18 +13,22 @@ const overdueBooks = ref([])
 const loading = ref(true)
 
 onMounted(async () => {
+  if (!yearStore.selectedYearId) {
+    router.push('/admin/academic-years')
+    return
+  }
   await Promise.all([loadStats(), loadRecentStudents(), loadOverdueBooks()])
   loading.value = false
 })
 
 async function loadStats() {
   const [s, t, c, b, inc, exp] = await Promise.all([
-    supabase.from('students').select('id', { count: 'exact', head: true }),
+    supabase.from('students').select('id', { count: 'exact', head: true }).eq('academic_year_id', yearStore.selectedYearId),
     supabase.from('teachers').select('id', { count: 'exact', head: true }),
-    supabase.from('classes').select('id', { count: 'exact', head: true }),
+    supabase.from('classes').select('id', { count: 'exact', head: true }).eq('academic_year_id', yearStore.selectedYearId),
     supabase.from('books').select('id', { count: 'exact', head: true }),
-    supabase.from('budget_transactions').select('amount').eq('type', 'income'),
-    supabase.from('budget_transactions').select('amount').eq('type', 'expense'),
+    supabase.from('budget_transactions').select('amount').eq('type', 'income').eq('academic_year_id', yearStore.selectedYearId),
+    supabase.from('budget_transactions').select('amount').eq('type', 'expense').eq('academic_year_id', yearStore.selectedYearId),
   ])
   stats.value.students = s.count ?? 0
   stats.value.teachers = t.count ?? 0
@@ -33,15 +39,21 @@ async function loadStats() {
 }
 
 async function loadRecentStudents() {
-  const { data } = await supabase.from('students').select('id, full_name, gender, created_at').order('created_at', { ascending: false }).limit(5)
+  const { data } = await supabase
+    .from('students')
+    .select('id, full_name, gender, created_at')
+    .eq('academic_year_id', yearStore.selectedYearId)
+    .order('created_at', { ascending: false })
+    .limit(5)
   recentStudents.value = data || []
 }
 
 async function loadOverdueBooks() {
   const { data } = await supabase
     .from('book_borrows')
-    .select('id, due_date, students(full_name), books(title)')
+    .select('id, due_date, students!inner(full_name, academic_year_id), books(title)')
     .eq('status', 'overdue')
+    .eq('students.academic_year_id', yearStore.selectedYearId)
     .limit(5)
   overdueBooks.value = data || []
 }

@@ -1,13 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { useAcademicYearStore } from '@/stores/academicYear'
 import { formatDate, toInputDate } from '@/utils/formatDate'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const yearStore = useAcademicYearStore()
 const students = ref([])
 const classes = ref([])
-const academicYears = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const search = ref('')
@@ -20,7 +21,7 @@ const toast = ref(null)
 const emptyForm = () => ({
   id: null, real_id: '', full_name: '', gender: '', dob: '', address: '',
   phone_number: '', father_name: '', father_job: '', mother_name: '', mother_job: '',
-  class_id: '', academic_year_id: '', is_scholarship: false, is_disability: false
+  class_id: '', academic_year_id: yearStore.selectedYearId, is_scholarship: false, is_disability: false
 })
 const form = ref(emptyForm())
 
@@ -36,24 +37,27 @@ const filtered = computed(() => {
 })
 
 onMounted(async () => {
-  await Promise.all([loadStudents(), loadClasses(), loadYears()])
+  await Promise.all([loadStudents(), loadClasses()])
 })
 
 async function loadStudents() {
   loading.value = true
-  const { data } = await supabase.from('students').select('*, classes(class_name)').order('full_name')
+  const { data } = await supabase
+    .from('students')
+    .select('*, classes(class_name)')
+    .eq('academic_year_id', yearStore.selectedYearId)
+    .order('full_name')
   students.value = data || []
   loading.value = false
 }
 
 async function loadClasses() {
-  const { data } = await supabase.from('classes').select('id, class_name').order('class_name')
+  const { data } = await supabase
+    .from('classes')
+    .select('id, class_name')
+    .eq('academic_year_id', yearStore.selectedYearId)
+    .order('class_name')
   classes.value = data || []
-}
-
-async function loadYears() {
-  const { data } = await supabase.from('academic_years').select('id, year_name').order('year_name', { ascending: false })
-  academicYears.value = data || []
 }
 
 function openAdd() {
@@ -222,13 +226,6 @@ function initials(name) {
               <select class="form-select" v-model="form.class_id">
                 <option value="">— Select class —</option>
                 <option v-for="c in classes" :key="c.id" :value="c.id">{{ c.class_name }}</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Academic Year</label>
-              <select class="form-select" v-model="form.academic_year_id">
-                <option value="">— Select year —</option>
-                <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.year_name }}</option>
               </select>
             </div>
             <div class="form-group">

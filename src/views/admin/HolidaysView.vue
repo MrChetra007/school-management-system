@@ -1,38 +1,36 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { useAcademicYearStore } from '@/stores/academicYear'
 import { formatDate, toInputDate } from '@/utils/formatDate'
 
+const yearStore = useAcademicYearStore()
 const holidays = ref([])
-const academicYears = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const showModal = ref(false)
 const isEdit = ref(false)
 const deleteTarget = ref(null)
 const toast = ref(null)
-const filterYear = ref('')
 
-const emptyForm = () => ({ id: null, name: '', start_date: '', end_date: '', academic_year_id: '' })
+const emptyForm = () => ({ id: null, name: '', start_date: '', end_date: '', academic_year_id: yearStore.selectedYearId })
 const form = ref(emptyForm())
 
 const filtered = computed(() => {
-  let list = holidays.value
-  if (filterYear.value) list = list.filter(h => h.academic_year_id === filterYear.value)
-  return list
+  return holidays.value
 })
 
-onMounted(async () => { await Promise.all([load(), loadYears()]) })
+onMounted(async () => { await load() })
 
 async function load() {
   loading.value = true
-  const { data } = await supabase.from('school_holidays').select('*, academic_years(year_name)').order('start_date', { ascending: false })
+  const { data } = await supabase
+    .from('school_holidays')
+    .select('*, academic_years(year_name)')
+    .eq('academic_year_id', yearStore.selectedYearId)
+    .order('start_date', { ascending: false })
   holidays.value = data || []
   loading.value = false
-}
-async function loadYears() {
-  const { data } = await supabase.from('academic_years').select('id, year_name').order('year_name', { ascending: false })
-  academicYears.value = data || []
 }
 function openAdd() { isEdit.value = false; form.value = emptyForm(); showModal.value = true }
 function openEdit(h) {
@@ -83,12 +81,7 @@ function dayCount(h) {
       </button>
     </div>
 
-    <div class="filters-bar">
-      <select class="form-select" v-model="filterYear" style="width:200px;">
-        <option value="">All Academic Years</option>
-        <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.year_name }}</option>
-      </select>
-    </div>
+    <div class="filters-bar" style="display:none;"></div>
 
     <div class="card">
       <div v-if="loading" class="card-body">
@@ -143,13 +136,6 @@ function dayCount(h) {
           <div class="form-group">
             <label class="form-label">End Date *</label>
             <input class="form-input" type="date" v-model="form.end_date" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Academic Year</label>
-            <select class="form-select" v-model="form.academic_year_id">
-              <option value="">— None —</option>
-              <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.year_name }}</option>
-            </select>
           </div>
         </div>
         <div class="modal-footer">

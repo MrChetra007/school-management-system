@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useAcademicYearStore } from '@/stores/academicYear'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -122,6 +123,15 @@ router.beforeEach(async (to) => {
   if (to.meta.role && auth.role !== to.meta.role) {
     console.warn('Router: Role mismatch. Expected:', to.meta.role, 'Found:', auth.role)
     return { name: 'unauthorized' }
+  }
+
+  // Academic Year Guard for Admin
+  if (auth.role === 'admin' && !to.meta.public && to.name !== 'admin-academic-years') {
+    const yearStore = useAcademicYearStore()
+    if (!yearStore.selectedYearId) {
+      console.warn('Router: Admin accessing pages without selected year, redirecting to academic-years')
+      return { name: 'admin-academic-years' }
+    }
   }
 
   return true

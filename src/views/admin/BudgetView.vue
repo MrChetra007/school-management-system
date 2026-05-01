@@ -1,10 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { useAcademicYearStore } from '@/stores/academicYear'
 import { formatDate, toInputDate } from '@/utils/formatDate'
 
+const yearStore = useAcademicYearStore()
 const transactions = ref([])
-const academicYears = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const showModal = ref(false)
@@ -12,15 +13,13 @@ const isEdit = ref(false)
 const deleteTarget = ref(null)
 const toast = ref(null)
 const filterType = ref('')
-const filterYear = ref('')
 
-const emptyForm = () => ({ id: null, type: 'income', date: '', description: '', category: '', amount: '', note: '', academic_year_id: '' })
+const emptyForm = () => ({ id: null, type: 'income', date: '', description: '', category: '', amount: '', note: '', academic_year_id: yearStore.selectedYearId })
 const form = ref(emptyForm())
 
 const filtered = computed(() => {
   let list = transactions.value
   if (filterType.value) list = list.filter(t => t.type === filterType.value)
-  if (filterYear.value) list = list.filter(t => t.academic_year_id === filterYear.value)
   return list
 })
 
@@ -28,17 +27,17 @@ const totalIncome = computed(() => filtered.value.filter(t => t.type === 'income
 const totalExpense = computed(() => filtered.value.filter(t => t.type === 'expense').reduce((a, t) => a + Number(t.amount), 0))
 const balance = computed(() => totalIncome.value - totalExpense.value)
 
-onMounted(async () => { await Promise.all([load(), loadYears()]) })
+onMounted(async () => { await load() })
 
 async function load() {
   loading.value = true
-  const { data } = await supabase.from('budget_transactions').select('*, academic_years(year_name)').order('date', { ascending: false })
+  const { data } = await supabase
+    .from('budget_transactions')
+    .select('*, academic_years(year_name)')
+    .eq('academic_year_id', yearStore.selectedYearId)
+    .order('date', { ascending: false })
   transactions.value = data || []
   loading.value = false
-}
-async function loadYears() {
-  const { data } = await supabase.from('academic_years').select('id, year_name').order('year_name', { ascending: false })
-  academicYears.value = data || []
 }
 function openAdd() { isEdit.value = false; form.value = emptyForm(); showModal.value = true }
 function openEdit(t) { isEdit.value = true; form.value = { ...t, date: toInputDate(t.date) }; showModal.value = true }
@@ -112,10 +111,6 @@ function fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigi
         <option value="income">Income</option>
         <option value="expense">Expense</option>
       </select>
-      <select class="form-select" v-model="filterYear" style="width:180px;">
-        <option value="">All Years</option>
-        <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.year_name }}</option>
-      </select>
     </div>
 
     <div class="card">
@@ -185,13 +180,6 @@ function fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigi
           <div class="form-group" style="grid-column:1/-1;">
             <label class="form-label">Description</label>
             <input class="form-input" v-model="form.description" placeholder="Brief description" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Academic Year</label>
-            <select class="form-select" v-model="form.academic_year_id">
-              <option value="">— None —</option>
-              <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.year_name }}</option>
-            </select>
           </div>
           <div class="form-group">
             <label class="form-label">Note</label>

@@ -21,7 +21,7 @@ async function handleLogin() {
   loading.value = true
   try {
     const role = await auth.login(email.value, password.value)
-    if (role === 'admin')     router.push('/admin/dashboard')
+    if (role === 'admin')     router.push('/admin/academic-years')
     else if (role === 'teacher')   router.push('/teacher/dashboard')
     else if (role === 'librarian') router.push('/librarian/dashboard')
     else router.push('/unauthorized')

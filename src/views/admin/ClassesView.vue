@@ -1,11 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { useAcademicYearStore } from '@/stores/academicYear'
 import { formatDate, toInputDate } from '@/utils/formatDate'
 
+const yearStore = useAcademicYearStore()
 const classes = ref([])
 const teachers = ref([])
-const academicYears = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const showModal = ref(false)
@@ -14,7 +15,7 @@ const deleteTarget = ref(null)
 const toast = ref(null)
 const search = ref('')
 
-const emptyForm = () => ({ id: null, class_name: '', teacher_id: '', academic_year_id: '', turn: 'morning' })
+const emptyForm = () => ({ id: null, class_name: '', teacher_id: '', academic_year_id: yearStore.selectedYearId, turn: 'morning' })
 const form = ref(emptyForm())
 
 const filtered = computed(() => {
@@ -23,22 +24,22 @@ const filtered = computed(() => {
 })
 
 onMounted(async () => {
-  await Promise.all([loadClasses(), loadTeachers(), loadYears()])
+  await Promise.all([loadClasses(), loadTeachers()])
 })
 
 async function loadClasses() {
   loading.value = true
-  const { data } = await supabase.from('classes').select('*, teachers(full_name), academic_years(year_name)').order('class_name')
+  const { data } = await supabase
+    .from('classes')
+    .select('*, teachers(full_name), academic_years(year_name)')
+    .eq('academic_year_id', yearStore.selectedYearId)
+    .order('class_name')
   classes.value = data || []
   loading.value = false
 }
 async function loadTeachers() {
   const { data } = await supabase.from('teachers').select('id, full_name').order('full_name')
   teachers.value = data || []
-}
-async function loadYears() {
-  const { data } = await supabase.from('academic_years').select('id, year_name').order('year_name', { ascending: false })
-  academicYears.value = data || []
 }
 
 function openAdd() { isEdit.value = false; form.value = emptyForm(); showModal.value = true }
@@ -146,13 +147,6 @@ function showToast(msg, type = 'success') {
             <select class="form-select" v-model="form.teacher_id">
               <option value="">— None —</option>
               <option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.full_name }}</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Academic Year</label>
-            <select class="form-select" v-model="form.academic_year_id">
-              <option value="">— Select —</option>
-              <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.year_name }}</option>
             </select>
           </div>
           <div class="form-group">

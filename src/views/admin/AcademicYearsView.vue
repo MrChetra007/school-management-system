@@ -1,8 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { useAcademicYearStore } from '@/stores/academicYear'
 import { toInputDate, formatDate } from '@/utils/formatDate'
 
+const router = useRouter()
+const yearStore = useAcademicYearStore()
 const years = ref([])
 const loading = ref(true)
 const saving = ref(false)
@@ -13,6 +17,11 @@ const toast = ref(null)
 
 const emptyForm = () => ({ id: null, year_name: '', start_date: '', end_date: '', status: 'active' })
 const form = ref(emptyForm())
+
+async function enterYear(y) {
+  yearStore.setYear(y.id, y.year_name)
+  router.push('/admin/dashboard')
+}
 
 onMounted(load)
 
@@ -78,7 +87,7 @@ function showToast(msg, type = 'success') {
       </div>
       <div v-else class="table-wrapper">
         <table>
-          <thead><tr><th>Year Name</th><th>Start Date</th><th>End Date</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Year Name</th><th>Start Date</th><th>End Date</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead>
           <tbody>
             <tr v-for="y in years" :key="y.id">
               <td style="font-weight:600;">{{ y.year_name }}</td>
@@ -86,7 +95,11 @@ function showToast(msg, type = 'success') {
               <td>{{ formatDate(y.end_date) }}</td>
               <td><span class="badge" :class="y.status === 'active' ? 'badge-green' : 'badge-gray'">{{ y.status }}</span></td>
               <td>
-                <div class="table-actions">
+                <div class="table-actions" style="justify-content:flex-end;">
+                  <button class="btn btn-primary btn-sm" @click="enterYear(y)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    មើល
+                  </button>
                   <button class="btn btn-ghost btn-sm btn-icon" @click="openEdit(y)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
