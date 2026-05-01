@@ -180,6 +180,11 @@ function isActive(path) {
           </svg>
         </button>
         <div class="top-bar-left">
+          <button class="btn btn-ghost btn-sm back-btn" @click="router.push('/admin/academic-years')" title="ប្តូរឆ្នាំសិក្សា">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+            ប្តូរឆ្នាំ
+          </button>
+          <div class="v-divider"></div>
           <h2 class="top-bar-title">{{ route.meta.title || 'Dashboard' }}</h2>
           <div v-if="yearStore.selectedYearName" class="year-badge">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
@@ -189,10 +194,7 @@ function isActive(path) {
           </div>
         </div>
         <div class="top-bar-right">
-          <button class="btn btn-secondary btn-sm" @click="router.push('/admin/academic-years')">
-            ប្តូរឆ្នាំសិក្សា
-          </button>
-          <span class="badge badge-blue">Admin</span>
+          <span class="role-tag">Admin</span>
           <div class="avatar">{{ userInitials }}</div>
         </div>
       </header>
@@ -246,4 +248,31 @@ function isActive(path) {
   color: #ef4444 !important;
 }
 .logout-btn:hover { background: rgba(239,68,68,0.1) !important; }
+.back-btn {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  gap: 4px;
+  padding: 6px 10px;
+}
+.back-btn:hover {
+  color: var(--primary-color);
+  background: var(--primary-50);
+}
+.v-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-default);
+  margin: 0 12px;
+}
+.role-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--primary-color);
+  background: var(--primary-50);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
 </style>

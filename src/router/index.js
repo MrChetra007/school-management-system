@@ -20,7 +20,15 @@ const router = createRouter({
       meta: { public: true },
     },
 
-    // ── Admin ─────────────────────────────────────────────
+    // ── Admin Standalone (Layer 1) ─────────────────────────
+    {
+      path: '/admin/academic-years',
+      name: 'admin-academic-years',
+      component: () => import('@/views/admin/AcademicYearsView.vue'),
+      meta: { requiresAuth: true, role: 'admin' },
+    },
+
+    // ── Admin App (Layer 2) ────────────────────────────────
     {
       path: '/admin',
       component: () => import('@/layouts/AdminLayout.vue'),
@@ -29,7 +37,6 @@ const router = createRouter({
         { path: '', redirect: '/admin/dashboard' },
         { path: 'dashboard',       name: 'admin-dashboard',       component: () => import('@/views/admin/DashboardView.vue') },
         { path: 'school',          name: 'admin-school',          component: () => import('@/views/admin/SchoolView.vue') },
-        { path: 'academic-years',  name: 'admin-academic-years',  component: () => import('@/views/admin/AcademicYearsView.vue') },
         { path: 'subjects',        name: 'admin-subjects',        component: () => import('@/views/admin/SubjectsView.vue') },
         { path: 'classes',         name: 'admin-classes',         component: () => import('@/views/admin/ClassesView.vue') },
         { path: 'teachers',        name: 'admin-teachers',        component: () => import('@/views/admin/TeachersView.vue') },
