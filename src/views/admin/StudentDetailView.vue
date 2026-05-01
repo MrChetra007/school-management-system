@@ -1,8 +1,29 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { formatDate, toInputDate } from '@/utils/formatDate'
+import { Line } from 'vue-chartjs'
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  LinearScale,
+  PointElement,
+  CategoryScale
+} from 'chart.js'
+
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  LinearScale,
+  PointElement,
+  CategoryScale
+)
 
 const route = useRoute()
 const router = useRouter()
@@ -18,6 +39,54 @@ const loading = ref(true)
 const saving = ref(false)
 const toast = ref(null)
 const activeTab = ref('health')
+
+// Chart Options
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'top'
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: false
+    }
+  }
+}
+
+// Computed chart data
+const sortedGrowth = computed(() => {
+  return [...growth.value].sort((a, b) => new Date(a.date) - new Date(b.date))
+})
+
+const heightChartData = computed(() => ({
+  labels: sortedGrowth.value.map(g => formatDate(g.date)),
+  datasets: [
+    {
+      label: 'Height (cm)',
+      backgroundColor: '#3b82f6',
+      borderColor: '#3b82f6',
+      data: sortedGrowth.value.map(g => g.height),
+      tension: 0.3
+    }
+  ]
+}))
+
+const weightChartData = computed(() => ({
+  labels: sortedGrowth.value.map(g => formatDate(g.date)),
+  datasets: [
+    {
+      label: 'Weight (kg)',
+      backgroundColor: '#10b981',
+      borderColor: '#10b981',
+      data: sortedGrowth.value.map(g => g.weight),
+      tension: 0.3
+    }
+  ]
+}))
 
 // Health form
 const healthForm = ref({ id: null, blood_type: '', allergies: '', medical_conditions: '', emergency_contact_name: '', emergency_contact_phone: '', vaccination_complete: false })
@@ -247,9 +316,26 @@ function initials(name) {
 
       <!-- Growth -->
       <div v-if="activeTab === 'growth'">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h3 class="card-title">Growth Tracking</h3>
           <button class="btn btn-primary btn-sm" @click="openGrowth()">+ Add Record</button>
         </div>
+
+        <div v-if="growth.length > 0" class="grid-cols-2" style="margin-bottom:20px; gap:20px;">
+          <div class="card">
+            <div class="card-header"><span class="card-title" style="font-size:14px;">Height Trend</span></div>
+            <div class="card-body" style="height:250px;">
+              <Line :data="heightChartData" :options="chartOptions" />
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title" style="font-size:14px;">Weight Trend</span></div>
+            <div class="card-body" style="height:250px;">
+              <Line :data="weightChartData" :options="chartOptions" />
+            </div>
+          </div>
+        </div>
+
         <div class="card">
           <div v-if="growth.length === 0" class="empty-state"><div class="empty-state-icon">📏</div><p class="empty-state-title">No growth records</p></div>
           <div v-else class="table-wrapper">
