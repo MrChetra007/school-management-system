@@ -24,18 +24,26 @@ export const useAuthStore = defineStore('auth', () => {
         .eq('id', id)
         .single()
       if (error) throw error
+      
+      // Security Check: Inactive users cannot access the app
+      if (data?.status === 'inactive') {
+        console.warn('AuthStore: Account deactivated. Blocking access.')
+        await logout()
+        return // Stop execution
+      }
+
       profile.value = data
       
-      if (data?.role === 'teacher') {
-        const { data: tData } = await supabase
-          .from('teachers')
-          .select('*')
-          .eq('user_id', id)
-          .maybeSingle()
-        teacherProfile.value = tData
-      }
+      // Every user has a teacher profile in Cambodia school system (Roadmap v8)
+      const { data: tData } = await supabase
+        .from('teachers')
+        .select('*')
+        .eq('user_id', id)
+        .maybeSingle()
+      teacherProfile.value = tData
+      
     } catch (e) {
-      console.error('Error fetching profile:', e)
+      console.error('AuthStore: Error fetching profile:', e)
     }
   }
 

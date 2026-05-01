@@ -47,6 +47,7 @@ const navGroups = [
       { to: '/admin/teachers',  icon: 'users',    label: 'Teachers' },
       { to: '/admin/classes',   icon: 'layers',   label: 'Classes' },
       { to: '/admin/students',  icon: 'user',     label: 'Students' },
+      { to: '/admin/users',     icon: 'shield',   label: 'User Accounts' },
     ],
   },
   {
@@ -100,6 +101,7 @@ const icons = {
   book:         'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z',
   printer:      'M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z',
   'log-out':    'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
+  shield:       'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
 }
 
 function getIconPath(name) {

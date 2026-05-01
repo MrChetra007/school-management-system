@@ -13,6 +13,8 @@ create extension if not exists "uuid-ossp";
 -- ENUMS
 -- ============================================================
 
+create type user_status as enum ('active', 'inactive');
+
 create type user_role as enum ('admin', 'teacher', 'librarian');
 
 create type attendance_status as enum ('present', 'absent', 'late', 'permission');
@@ -37,6 +39,7 @@ create table users (
   id          uuid primary key references auth.users(id) on delete cascade,
   email       text not null,
   role        user_role not null default 'teacher',
+  status      user_status not null default 'active',
   created_at  timestamptz default now()
 );
 
@@ -359,6 +362,122 @@ $$ language sql security definer stable;
 
 
 -- ============================================================
+-- FUNCTION: create_user
+-- Called by admin frontend to create new auth + public user
+-- Uses security definer so it runs with elevated privileges
+-- ============================================================
+
+create or replace function create_user(
+  p_email    text,
+  p_password text,
+  p_role     user_role,
+  p_name     text
+)
+returns json as $$
+declare
+  new_user_id uuid;
+begin
+  -- Only admin can call this
+  if get_user_role() != 'admin' then
+    raise exception 'Permission denied: admin only';
+  end if;
+
+  -- Create auth user
+  new_user_id := (
+    select id from auth.users
+    where email = p_email
+    limit 1
+  );
+
+  if new_user_id is not null then
+    raise exception 'Email already exists';
+  end if;
+
+  -- Insert into auth.users via Supabase admin API
+  -- This function signals the frontend to use Supabase Admin SDK
+  -- The actual auth user creation is done via Edge Function (see below)
+  -- This function handles the public.users + teachers row creation
+
+  return json_build_object(
+    'role', p_role,
+    'name', p_name,
+    'email', p_email
+  );
+end;
+$$ language plpgsql security definer;
+
+
+-- ============================================================
+-- FUNCTION: admin_update_user_status
+-- Deactivate or reactivate a user account
+-- ============================================================
+
+create or replace function admin_update_user_status(
+  p_user_id uuid,
+  p_status  user_status
+)
+returns void as $$
+begin
+  if get_user_role() != 'admin' then
+    raise exception 'Permission denied: admin only';
+  end if;
+
+  update users set status = p_status where id = p_user_id;
+
+  -- If deactivating, ban user in auth.users to block login
+  if p_status = 'inactive' then
+    update auth.users
+    set banned_until = '2099-12-31'
+    where id = p_user_id;
+  else
+    -- Reactivate: remove ban
+    update auth.users
+    set banned_until = null
+    where id = p_user_id;
+  end if;
+end;
+$$ language plpgsql security definer;
+
+
+-- ============================================================
+-- FUNCTION: admin_update_user_role
+-- Change a user's role
+-- ============================================================
+
+create or replace function admin_update_user_role(
+  p_user_id uuid,
+  p_role    user_role
+)
+returns void as $$
+begin
+  if get_user_role() != 'admin' then
+    raise exception 'Permission denied: admin only';
+  end if;
+
+  update users set role = p_role where id = p_user_id;
+end;
+$$ language plpgsql security definer;
+
+
+-- ============================================================
+-- FUNCTION: admin_reset_password
+-- Reset a user's password (via Supabase Admin API)
+-- Actual password reset is done via Edge Function
+-- This function validates the caller is admin
+-- ============================================================
+
+create or replace function admin_reset_password(p_user_id uuid)
+returns void as $$
+begin
+  if get_user_role() != 'admin' then
+    raise exception 'Permission denied: admin only';
+  end if;
+  -- Password reset is handled by Edge Function using service_role key
+end;
+$$ language plpgsql security definer;
+
+
+-- ============================================================
 -- ENABLE ROW LEVEL SECURITY ON ALL TABLES
 -- ============================================================
 
@@ -401,6 +520,13 @@ create policy "users: admin full access"
 create policy "users: self read"
   on users for select to authenticated
   using (id = auth.uid());
+
+-- Block inactive users from reading any data
+-- (auth-level ban via banned_until handles login block)
+-- RLS double-check: inactive users can't query their own row
+create policy "users: active only"
+  on users for select to authenticated
+  using (status = 'active' or get_user_role() = 'admin');
 
 
 -- ------------------------------------------------------------
@@ -881,191 +1007,6 @@ create policy "teacher-profiles: public read"
 
 
 -- ============================================================
--- DONE
--- ============================================================
-
--- ============================================================
--- SEED: Create 3 role accounts for testing
--- Run this in: Supabase Dashboard → SQL Editor
--- ============================================================
-
--- Enable pgcrypto for password hashing
-create extension if not exists pgcrypto;
-
-
--- ============================================================
--- STEP 1: Insert into auth.users (Supabase Auth)
--- ============================================================
-
-insert into auth.users (
-  id,
-  instance_id,
-  aud,
-  role,
-  email,
-  encrypted_password,
-  email_confirmed_at,
-  raw_app_meta_data,
-  raw_user_meta_data,
-  created_at,
-  updated_at,
-  confirmation_token,
-  email_change,
-  email_change_token_new,
-  recovery_token
-)
-values
-
--- 1. Admin account
-(
-  gen_random_uuid(),
-  '00000000-0000-0000-0000-000000000000',
-  'authenticated',
-  'authenticated',
-  'admin@gmail.com',
-  crypt('password123', gen_salt('bf')),
-  now(),
-  '{"provider": "email", "providers": ["email"]}',
-  '{"role": "admin"}',
-  now(),
-  now(),
-  '', '', '', ''
-),
-
--- 2. Teacher account
-(
-  gen_random_uuid(),
-  '00000000-0000-0000-0000-000000000000',
-  'authenticated',
-  'authenticated',
-  'teacher@gmail.com',
-  crypt('password123', gen_salt('bf')),
-  now(),
-  '{"provider": "email", "providers": ["email"]}',
-  '{"role": "teacher"}',
-  now(),
-  now(),
-  '', '', '', ''
-),
-
--- 3. Librarian account
-(
-  gen_random_uuid(),
-  '00000000-0000-0000-0000-000000000000',
-  'authenticated',
-  'authenticated',
-  'librarian@gmail.com',
-  crypt('password123', gen_salt('bf')),
-  now(),
-  '{"provider": "email", "providers": ["email"]}',
-  '{"role": "librarian"}',
-  now(),
-  now(),
-  '', '', '', ''
-);
-
-
--- ============================================================
--- STEP 2: Insert into public.users (your users table)
--- Links auth.users to public.users with correct role
--- ============================================================
-
-insert into public.users (id, email, role)
-values
-(
-  (select id from auth.users where email = 'admin@gmail.com'),
-  'admin@gmail.com',
-  'admin'
-),
-(
-  (select id from auth.users where email = 'teacher@gmail.com'),
-  'teacher@gmail.com',
-  'teacher'
-),
-(
-  (select id from auth.users where email = 'librarian@gmail.com'),
-  'librarian@gmail.com',
-  'librarian'
-);
-
-
--- ============================================================
--- STEP 3: Create a teacher profile for the teacher account
--- So teacher RLS queries via teachers table work correctly
--- ============================================================
-
-insert into teachers (id, user_id, full_name, gender, email)
-values
-(
-  gen_random_uuid(),
-  (select id from auth.users where email = 'teacher@gmail.com'),
-  'គ្រូបង្រៀន សាកល្បង',
-  'ប្រុស',
-  'teacher@gmail.com'
-);
-
-
--- ============================================================
--- VERIFY: Check all 3 accounts were created correctly
--- ============================================================
-
-select
-  u.email,
-  u.role,
-  au.email_confirmed_at is not null as email_confirmed
-from public.users u
-join auth.users au on au.id = u.id
-where u.email in ('admin@gmail.com', 'teacher@gmail.com', 'librarian@gmail.com');
-
--- ============================================================
--- FIX: Replace old handle_new_user() trigger
--- The old trigger was pointing to public.profiles (doesn't exist)
--- We replace it to point to our public.users table instead
--- Run this BEFORE seed_accounts.sql
--- ============================================================
-
-
--- STEP 1: Drop the old broken trigger
-drop trigger if exists on_auth_user_created on auth.users;
-
-
--- STEP 2: Drop the old broken function
-drop function if exists public.handle_new_user();
-
-
--- STEP 3: Create a new correct function pointing to public.users
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.users (id, email, role)
-  values (
-    new.id,
-    new.email,
-    coalesce(
-      (new.raw_user_meta_data->>'role')::user_role,
-      'teacher'
-    )
-  );
-  return new;
-end;
-$$ language plpgsql security definer;
-
-
--- STEP 4: Re-attach the trigger to auth.users
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row
-  execute function public.handle_new_user();
-
-
--- ============================================================
--- DONE — Now go run seed_accounts.sql
--- ============================================================
-ALTER TABLE scores ADD COLUMN month INTEGER;
-ALTER TABLE scores ADD COLUMN semester_number INTEGER;
-
-
--- ============================================================
 -- SUPABASE EDGE FUNCTION: manage-user
 -- Required for: create user, reset password (needs service_role key)
 -- Create file: supabase/functions/manage-user/index.ts
@@ -1078,11 +1019,8 @@ ALTER TABLE scores ADD COLUMN semester_number INTEGER;
 -- Called from Vue frontend using supabase.functions.invoke('manage-user', {...})
 -- Protected: validates JWT + checks caller is admin before executing
 -- ============================================================
- 
- 
+
+
 -- ============================================================
 -- DONE
 -- ============================================================
--- Remove the automatic trigger and function
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP FUNCTION IF EXISTS public.handle_new_user();

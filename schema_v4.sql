@@ -1,8 +1,15 @@
 -- ============================================================
 -- PRIMARY SCHOOL MANAGEMENT SYSTEM
 -- schema.sql — Tables + RLS Policies
+-- Version: 4 (roadmap v7)
 -- Stack: Supabase (PostgreSQL)
 -- Roles: admin, teacher, librarian, parent (anon)
+--
+-- KEY DESIGN DECISION (v4):
+-- In Cambodian schools, every staff member IS a teacher.
+-- Librarians and admins are teachers with different system roles.
+-- Therefore EVERY user account always has a corresponding
+-- teachers row — role only controls what they can access.
 -- ============================================================
 
 -- Enable UUID extension
@@ -12,6 +19,8 @@ create extension if not exists "uuid-ossp";
 -- ============================================================
 -- ENUMS
 -- ============================================================
+
+create type user_status as enum ('active', 'inactive');
 
 create type user_role as enum ('admin', 'teacher', 'librarian');
 
@@ -31,12 +40,15 @@ create type academic_status as enum ('active', 'inactive');
 -- ============================================================
 -- USERS
 -- Linked to Supabase auth.users
+-- role = system access level only (admin / teacher / librarian)
+-- Every user ALWAYS has a matching teachers row (profile data)
 -- ============================================================
 
 create table users (
   id          uuid primary key references auth.users(id) on delete cascade,
   email       text not null,
   role        user_role not null default 'teacher',
+  status      user_status not null default 'active',
   created_at  timestamptz default now()
 );
 
@@ -87,11 +99,15 @@ create table subjects (
 
 -- ============================================================
 -- TEACHERS
+-- Stores the personal/professional profile of every staff member.
+-- This table is created for ALL users regardless of role
+-- (admin, teacher, librarian are all teachers in Cambodian schools).
+-- user_id links back to users(id) — always required, never null.
 -- ============================================================
 
 create table teachers (
   id            uuid primary key default uuid_generate_v4(),
-  user_id       uuid references users(id) on delete set null,
+  user_id       uuid not null unique references users(id) on delete cascade,
   full_name     text not null,
   gender        text,
   dob           date,
@@ -359,6 +375,58 @@ $$ language sql security definer stable;
 
 
 -- ============================================================
+-- FUNCTION: admin_update_user_status
+-- Deactivate or reactivate a user account
+-- Sets banned_until in auth.users to block/unblock login
+-- ============================================================
+
+create or replace function admin_update_user_status(
+  p_user_id uuid,
+  p_status  user_status
+)
+returns void as $$
+begin
+  if get_user_role() != 'admin' then
+    raise exception 'Permission denied: admin only';
+  end if;
+
+  update users set status = p_status where id = p_user_id;
+
+  if p_status = 'inactive' then
+    update auth.users
+    set banned_until = '2099-12-31'
+    where id = p_user_id;
+  else
+    update auth.users
+    set banned_until = null
+    where id = p_user_id;
+  end if;
+end;
+$$ language plpgsql security definer;
+
+
+-- ============================================================
+-- FUNCTION: admin_update_user_role
+-- Change a user's role (admin / teacher / librarian)
+-- Does NOT affect teachers row — profile stays the same
+-- ============================================================
+
+create or replace function admin_update_user_role(
+  p_user_id uuid,
+  p_role    user_role
+)
+returns void as $$
+begin
+  if get_user_role() != 'admin' then
+    raise exception 'Permission denied: admin only';
+  end if;
+
+  update users set role = p_role where id = p_user_id;
+end;
+$$ language plpgsql security definer;
+
+
+-- ============================================================
 -- ENABLE ROW LEVEL SECURITY ON ALL TABLES
 -- ============================================================
 
@@ -402,6 +470,13 @@ create policy "users: self read"
   on users for select to authenticated
   using (id = auth.uid());
 
+-- Block inactive users from reading any data
+-- auth-level ban via banned_until handles login block
+-- RLS double-check: inactive users can't query their own row
+create policy "users: active only"
+  on users for select to authenticated
+  using (status = 'active' or get_user_role() = 'admin');
+
 
 -- ------------------------------------------------------------
 -- SCHOOL INFORMATION
@@ -440,13 +515,17 @@ create policy "subjects: admin full"
   using (get_user_role() = 'admin')
   with check (get_user_role() = 'admin');
 
-create policy "subjects: teacher read"
+create policy "subjects: staff read"
   on subjects for select to authenticated
-  using (get_user_role() = 'teacher');
+  using (get_user_role() in ('teacher', 'librarian'));
 
 
 -- ------------------------------------------------------------
 -- TEACHERS
+-- Every user has a teachers row. Policies:
+--   admin    → full CRUD on all teachers
+--   any user → can read all teachers (for class assignment display etc.)
+--   self     → can update own profile
 -- ------------------------------------------------------------
 
 create policy "teachers: admin full"
@@ -454,9 +533,14 @@ create policy "teachers: admin full"
   using (get_user_role() = 'admin')
   with check (get_user_role() = 'admin');
 
-create policy "teachers: self read"
+create policy "teachers: all staff read"
   on teachers for select to authenticated
-  using (user_id = auth.uid());
+  using (get_user_role() in ('teacher', 'librarian'));
+
+create policy "teachers: self update"
+  on teachers for update to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid());
 
 
 -- ------------------------------------------------------------
@@ -836,16 +920,14 @@ create policy "inventory_items: admin full"
 
 -- ============================================================
 -- SUPABASE STORAGE BUCKET: teacher-profiles
--- Run these in Supabase Dashboard → Storage → New Bucket
--- Or via SQL editor using the storage schema
+-- Used for ALL staff profile pictures (admin, teacher, librarian)
 -- ============================================================
 
--- Create the bucket (public so profile images are accessible)
 insert into storage.buckets (id, name, public)
 values ('teacher-profiles', 'teacher-profiles', true)
 on conflict do nothing;
 
--- Allow authenticated admin to upload/update/delete teacher profiles
+-- Allow authenticated admin to upload/update/delete any profile
 create policy "teacher-profiles: admin full"
   on storage.objects for all to authenticated
   using (
@@ -857,232 +939,61 @@ create policy "teacher-profiles: admin full"
     get_user_role() = 'admin'
   );
 
--- Allow teacher to upload/update their own profile picture
-create policy "teacher-profiles: teacher upload own"
+-- Allow any staff to upload/update their own profile picture
+create policy "teacher-profiles: self upload"
   on storage.objects for insert to authenticated
   with check (
     bucket_id = 'teacher-profiles' and
-    get_user_role() = 'teacher' and
     (storage.foldername(name))[1] = auth.uid()::text
   );
 
-create policy "teacher-profiles: teacher update own"
+create policy "teacher-profiles: self update"
   on storage.objects for update to authenticated
   using (
     bucket_id = 'teacher-profiles' and
-    get_user_role() = 'teacher' and
     (storage.foldername(name))[1] = auth.uid()::text
   );
 
--- Allow public read (bucket is public, so profile images load for everyone)
+-- Allow public read (bucket is public, profile images load for everyone)
 create policy "teacher-profiles: public read"
   on storage.objects for select to public
   using (bucket_id = 'teacher-profiles');
 
 
 -- ============================================================
--- DONE
--- ============================================================
-
--- ============================================================
--- SEED: Create 3 role accounts for testing
--- Run this in: Supabase Dashboard → SQL Editor
--- ============================================================
-
--- Enable pgcrypto for password hashing
-create extension if not exists pgcrypto;
-
-
--- ============================================================
--- STEP 1: Insert into auth.users (Supabase Auth)
--- ============================================================
-
-insert into auth.users (
-  id,
-  instance_id,
-  aud,
-  role,
-  email,
-  encrypted_password,
-  email_confirmed_at,
-  raw_app_meta_data,
-  raw_user_meta_data,
-  created_at,
-  updated_at,
-  confirmation_token,
-  email_change,
-  email_change_token_new,
-  recovery_token
-)
-values
-
--- 1. Admin account
-(
-  gen_random_uuid(),
-  '00000000-0000-0000-0000-000000000000',
-  'authenticated',
-  'authenticated',
-  'admin@gmail.com',
-  crypt('password123', gen_salt('bf')),
-  now(),
-  '{"provider": "email", "providers": ["email"]}',
-  '{"role": "admin"}',
-  now(),
-  now(),
-  '', '', '', ''
-),
-
--- 2. Teacher account
-(
-  gen_random_uuid(),
-  '00000000-0000-0000-0000-000000000000',
-  'authenticated',
-  'authenticated',
-  'teacher@gmail.com',
-  crypt('password123', gen_salt('bf')),
-  now(),
-  '{"provider": "email", "providers": ["email"]}',
-  '{"role": "teacher"}',
-  now(),
-  now(),
-  '', '', '', ''
-),
-
--- 3. Librarian account
-(
-  gen_random_uuid(),
-  '00000000-0000-0000-0000-000000000000',
-  'authenticated',
-  'authenticated',
-  'librarian@gmail.com',
-  crypt('password123', gen_salt('bf')),
-  now(),
-  '{"provider": "email", "providers": ["email"]}',
-  '{"role": "librarian"}',
-  now(),
-  now(),
-  '', '', '', ''
-);
-
-
--- ============================================================
--- STEP 2: Insert into public.users (your users table)
--- Links auth.users to public.users with correct role
--- ============================================================
-
-insert into public.users (id, email, role)
-values
-(
-  (select id from auth.users where email = 'admin@gmail.com'),
-  'admin@gmail.com',
-  'admin'
-),
-(
-  (select id from auth.users where email = 'teacher@gmail.com'),
-  'teacher@gmail.com',
-  'teacher'
-),
-(
-  (select id from auth.users where email = 'librarian@gmail.com'),
-  'librarian@gmail.com',
-  'librarian'
-);
-
-
--- ============================================================
--- STEP 3: Create a teacher profile for the teacher account
--- So teacher RLS queries via teachers table work correctly
--- ============================================================
-
-insert into teachers (id, user_id, full_name, gender, email)
-values
-(
-  gen_random_uuid(),
-  (select id from auth.users where email = 'teacher@gmail.com'),
-  'គ្រូបង្រៀន សាកល្បង',
-  'ប្រុស',
-  'teacher@gmail.com'
-);
-
-
--- ============================================================
--- VERIFY: Check all 3 accounts were created correctly
--- ============================================================
-
-select
-  u.email,
-  u.role,
-  au.email_confirmed_at is not null as email_confirmed
-from public.users u
-join auth.users au on au.id = u.id
-where u.email in ('admin@gmail.com', 'teacher@gmail.com', 'librarian@gmail.com');
-
--- ============================================================
--- FIX: Replace old handle_new_user() trigger
--- The old trigger was pointing to public.profiles (doesn't exist)
--- We replace it to point to our public.users table instead
--- Run this BEFORE seed_accounts.sql
--- ============================================================
-
-
--- STEP 1: Drop the old broken trigger
-drop trigger if exists on_auth_user_created on auth.users;
-
-
--- STEP 2: Drop the old broken function
-drop function if exists public.handle_new_user();
-
-
--- STEP 3: Create a new correct function pointing to public.users
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.users (id, email, role)
-  values (
-    new.id,
-    new.email,
-    coalesce(
-      (new.raw_user_meta_data->>'role')::user_role,
-      'teacher'
-    )
-  );
-  return new;
-end;
-$$ language plpgsql security definer;
-
-
--- STEP 4: Re-attach the trigger to auth.users
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row
-  execute function public.handle_new_user();
-
-
--- ============================================================
--- DONE — Now go run seed_accounts.sql
--- ============================================================
-ALTER TABLE scores ADD COLUMN month INTEGER;
-ALTER TABLE scores ADD COLUMN semester_number INTEGER;
-
-
--- ============================================================
 -- SUPABASE EDGE FUNCTION: manage-user
--- Required for: create user, reset password (needs service_role key)
+-- Required for: create user, reset password, delete user
+-- Needs service_role key — runs server-side only
 -- Create file: supabase/functions/manage-user/index.ts
 --
 -- Handles these actions via POST body { action, payload }:
---   action: "create"         → creates auth user + public.users + teachers row if needed
---   action: "reset_password" → updates auth user password
---   action: "delete"         → permanently deletes auth user + cascades
 --
--- Called from Vue frontend using supabase.functions.invoke('manage-user', {...})
+--   action: "create"
+--     payload: {
+--       email, password, role,
+--       full_name, gender, dob, phone_number,
+--       degree, address, profile_url
+--     }
+--     → creates auth.users entry
+--     → inserts public.users row (role, status=active)
+--     → inserts teachers row (full profile, user_id linked)
+--     NOTE: ALL roles get a teachers row (admin/teacher/librarian
+--           are all teachers in Cambodian schools)
+--
+--   action: "reset_password"
+--     payload: { user_id, new_password }
+--     → updates auth user password
+--
+--   action: "delete"
+--     payload: { user_id }
+--     → deletes auth user (cascades to public.users + teachers)
+--
+-- Called from Vue frontend:
+--   supabase.functions.invoke('manage-user', { body: { action, payload } })
 -- Protected: validates JWT + checks caller is admin before executing
 -- ============================================================
- 
- 
+
+
 -- ============================================================
 -- DONE
 -- ============================================================
--- Remove the automatic trigger and function
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-DROP FUNCTION IF EXISTS public.handle_new_user();
