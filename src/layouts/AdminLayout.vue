@@ -1,11 +1,17 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const sidebarOpen = ref(false)
+
+// Close sidebar on route change (mobile)
+watch(() => route.path, () => {
+  sidebarOpen.value = false
+})
 
 const userInitials = computed(() => {
   const email = auth.profile?.email || ''
@@ -105,8 +111,11 @@ function isActive(path) {
 
 <template>
   <div class="app-layout">
+    <!-- Mobile Overlay -->
+    <div v-if="sidebarOpen" class="sidebar-overlay" @click="sidebarOpen = false"></div>
+
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" :class="{ 'mobile-open': sidebarOpen }">
       <!-- Brand -->
       <div class="sidebar-brand">
         <div class="sidebar-brand-icon">
@@ -163,6 +172,11 @@ function isActive(path) {
     <div class="main-content">
       <!-- Top bar -->
       <header class="top-bar">
+        <button class="mobile-toggle" @click="sidebarOpen = true" style="margin-right: 8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
         <div class="top-bar-left">
           <h2 class="top-bar-title">{{ route.meta.title || 'Dashboard' }}</h2>
         </div>

@@ -1,11 +1,15 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { RouterView, useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const route = useRoute()
 const auth = useAuthStore()
+const sidebarOpen = ref(false)
+
+watch(() => route.path, () => { sidebarOpen.value = false })
+
 const userInitials = computed(() => (auth.profile?.email || '').slice(0, 2).toUpperCase())
 
 async function logout() { await auth.logout(); router.push('/login') }
@@ -21,7 +25,8 @@ function isActive(path) { return route.path.startsWith(path) }
 
 <template>
   <div class="app-layout">
-    <aside class="sidebar">
+    <div v-if="sidebarOpen" class="sidebar-overlay" @click="sidebarOpen = false"></div>
+    <aside class="sidebar" :class="{ 'mobile-open': sidebarOpen }">
       <div class="sidebar-brand">
         <div class="sidebar-brand-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="20" height="20">
@@ -59,6 +64,11 @@ function isActive(path) { return route.path.startsWith(path) }
     </aside>
     <div class="main-content">
       <header class="top-bar">
+        <button class="mobile-toggle" @click="sidebarOpen = true" style="margin-right: 8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
         <div style="flex:1"><h2 style="font-size:16px;font-weight:600;">Library Management</h2></div>
         <div style="display:flex;align-items:center;gap:12px;">
           <span class="badge badge-purple">Librarian</span>
