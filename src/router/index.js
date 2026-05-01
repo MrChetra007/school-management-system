@@ -36,8 +36,7 @@ const router = createRouter({
       children: [
         { path: '', redirect: '/admin/dashboard' },
         { path: 'dashboard',       name: 'admin-dashboard',       component: () => import('@/views/admin/DashboardView.vue') },
-        { path: 'school',          name: 'admin-school',          component: () => import('@/views/admin/SchoolView.vue') },
-        { path: 'subjects',        name: 'admin-subjects',        component: () => import('@/views/admin/SubjectsView.vue') },
+        { path: 'settings',        name: 'admin-settings',        component: () => import('@/views/admin/SettingsView.vue') },
         { path: 'classes',         name: 'admin-classes',         component: () => import('@/views/admin/ClassesView.vue') },
         { path: 'teachers',        name: 'admin-teachers',        component: () => import('@/views/admin/TeachersView.vue') },
         { path: 'students',        name: 'admin-students',        component: () => import('@/views/admin/StudentsView.vue') },
@@ -47,7 +46,6 @@ const router = createRouter({
         { path: 'scores',          name: 'admin-scores',          component: () => import('@/views/admin/ScoresView.vue') },
         { path: 'health',          name: 'admin-health',          component: () => import('@/views/admin/HealthView.vue') },
         { path: 'sick-days',       name: 'admin-sick-days',       component: () => import('@/views/admin/SickDaysView.vue') },
-        { path: 'holidays',        name: 'admin-holidays',        component: () => import('@/views/admin/HolidaysView.vue') },
         { path: 'budget',          name: 'admin-budget',          component: () => import('@/views/admin/BudgetView.vue') },
         { path: 'inventory',       name: 'admin-inventory',       component: () => import('@/views/admin/InventoryView.vue') },
         { path: 'library',         name: 'admin-library',         component: () => import('@/views/admin/LibraryView.vue') },

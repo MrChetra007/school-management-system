@@ -57,12 +57,24 @@ function statusBadge(status) {
       <div v-else class="table-wrapper">
         <table>
           <thead>
-            <tr><th>Date</th><th>Status</th></tr>
+            <tr>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Check-in Time</th>
+              <th>Note / Reason</th>
+            </tr>
           </thead>
           <tbody>
             <tr v-for="a in attendance" :key="a.id">
               <td>{{ formatDate(a.date) }}</td>
               <td><span class="badge" :class="statusBadge(a.status)">{{ a.status }}</span></td>
+              <td style="font-family:monospace;">{{ a.check_in_time ? new Date(a.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—' }}</td>
+              <td style="font-size:13px; color:var(--text-secondary);">
+                <span v-if="a.note" class="badge badge-gray" :title="a.note">Override: {{ a.note }}</span>
+                <span v-else-if="!a.check_in_time && a.status !== 'present'">—</span>
+                <span v-else-if="!a.check_in_time">Auto</span>
+                <span v-else>Self</span>
+              </td>
             </tr>
           </tbody>
         </table>

@@ -44,56 +44,58 @@ const route = useRoute()
 }
 
 .parent-header {
-  height: auto;
-  padding: 32px 24px;
-  background: transparent;
-  border-bottom: none;
+  height: 64px;
+  padding: 0 24px;
+  background: white;
+  border-bottom: 1px solid var(--border-default);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 12px;
-  box-shadow: none;
+  justify-content: space-between;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .parent-brand {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 12px;
   text-decoration: none;
 }
 
 .parent-logo {
-  width: 48px;
-  height: 48px;
-  background: var(--primary-500);
-  border-radius: 12px;
+  width: 32px;
+  height: 32px;
+  background: var(--primary-color);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .parent-brand-name {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
-.parent-header-right { display: none; }
+.parent-header-right { display: flex; }
 
 .parent-content {
   flex: 1;
-  max-width: 480px;
+  max-width: 1000px;
   width: 100%;
   margin: 0 auto;
-  padding: 0 20px 40px;
+  padding: 32px 20px;
 }
 
 .parent-footer {
   text-align: center;
-  padding: 16px;
-  font-size: 12px;
+  padding: 24px;
+  font-size: 13px;
   color: var(--text-muted);
   border-top: 1px solid var(--border-default);
   background: white;

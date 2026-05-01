@@ -11,22 +11,50 @@ const attendanceToday = ref({ present: 0, total: 0 })
 const recentScores = ref([])
 const loading = ref(true)
 
+const myAttendanceToday = ref(null)
+const checkingIn = ref(false)
+
 onMounted(async () => {
   if (auth.teacherProfile) {
-    await loadData()
+    await Promise.all([loadData(), loadCheckInStatus()])
   } else {
     // Wait for auth to init if needed
     setTimeout(async () => {
-      if (auth.teacherProfile) await loadData()
+      if (auth.teacherProfile) await Promise.all([loadData(), loadCheckInStatus()])
       else loading.value = false
     }, 1000)
   }
 })
 
+async function loadCheckInStatus() {
+  if (!auth.teacherProfile) return
+  const teacherId = auth.teacherProfile.id
+  const today = new Date().toISOString().split('T')[0]
+  const { data } = await supabase
+    .from('teacher_attendances')
+    .select('*')
+    .eq('teacher_id', teacherId)
+    .eq('date', today)
+    .maybeSingle()
+  myAttendanceToday.value = data
+}
+
+async function handleCheckIn() {
+  checkingIn.value = true
+  const { data, error } = await supabase.rpc('teacher_check_in')
+  checkingIn.value = false
+  if (error) {
+    alert(error.message)
+  } else {
+    // RPC returns {status, check_in_time, turn, threshold}
+    myAttendanceToday.value = data
+  }
+}
+
 async function loadData() {
   loading.value = true
   const teacherId = auth.teacherProfile.id
-
+  
   // 1. Get Class Info
   const { data: classData } = await supabase
     .from('classes')
@@ -84,8 +112,23 @@ const attendancePercent = computed(() => {
         <p class="page-subtitle" v-if="classInfo">Welcome back! Managing <strong>{{ classInfo.class_name }}</strong> ({{ classInfo.academic_years?.year_name }})</p>
         <p class="page-subtitle" v-else>Welcome back! You are not assigned to any class yet.</p>
       </div>
-      <div v-if="classInfo" class="badge badge-blue" style="padding:8px 16px; font-size:14px;">
-        {{ classInfo.turn === 'morning' ? '🌅 Morning Turn' : '🌇 Afternoon Turn' }}
+      <div style="display:flex; gap:10px; align-items:center;">
+        <!-- Check-in Status -->
+        <div v-if="myAttendanceToday" class="badge" :class="myAttendanceToday.status === 'present' ? 'badge-green' : 'badge-yellow'" style="padding:10px 16px; flex-direction:column; align-items:flex-start; gap:2px; height:auto;">
+          <div style="font-weight:700;">{{ myAttendanceToday.status === 'present' ? '✅ មានវត្តមាន' : '🟡 យឺត' }}</div>
+          <div style="font-size:11px; opacity:0.8;">
+            🕒 {{ new Date(myAttendanceToday.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
+            <span v-if="myAttendanceToday.note" title="Admin Note"> 📝</span>
+          </div>
+        </div>
+        <!-- Check-in Button -->
+        <button v-else class="btn btn-primary" style="padding:10px 24px; font-weight:bold; box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);" @click="handleCheckIn" :disabled="checkingIn">
+          {{ checkingIn ? 'កំពុងបញ្ចូល...' : 'ចូលធ្វើការ (Check-in)' }}
+        </button>
+
+        <div v-if="classInfo" class="badge badge-blue" style="padding:10px 16px;">
+          {{ classInfo.turn === 'morning' ? '🌅 វេនព្រឹក' : '🌇 វេនល្ងាច' }}
+        </div>
       </div>
     </div>
 

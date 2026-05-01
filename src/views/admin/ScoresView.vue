@@ -78,19 +78,21 @@ async function init() {
 }
 
 async function fetchClasses() {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('classes')
     .select('id, class_name')
     .eq('academic_year_id', yearStore.selectedYearId)
     .order('class_name')
+  if (error) console.error('Error fetching classes:', error)
   classes.value = data || []
 }
 
 async function fetchSubjects() {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('subjects')
     .select('*')
     .order('subject_name')
+  if (error) console.error('Error fetching subjects:', error)
   subjects.value = data || []
 }
 

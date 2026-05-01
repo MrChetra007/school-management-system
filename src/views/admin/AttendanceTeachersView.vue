@@ -113,6 +113,41 @@ async function fetchData() {
 
 watch([selectedMonth, selectedYear], fetchData)
 
+const showOverrideModal = ref(false)
+const overrideForm = ref({ teacher_id: null, teacher_name: '', date: '', status: 'present', note: '' })
+const overriding = ref(false)
+
+function openOverride(teacherId, teacherName, day) {
+  const dateStr = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+  const existing = attendances.value.find(a => a.teacher_id === teacherId && a.date === dateStr)
+  
+  overrideForm.value = {
+    teacher_id: teacherId,
+    teacher_name: teacherName,
+    date: dateStr,
+    status: existing?.status || 'present',
+    note: existing?.note || ''
+  }
+  showOverrideModal.value = true
+}
+
+async function saveOverride() {
+  overriding.value = true
+  const { error } = await supabase.rpc('admin_override_teacher_attendance', {
+    p_teacher_id: overrideForm.value.teacher_id,
+    p_date: overrideForm.value.date,
+    p_status: overrideForm.value.status,
+    p_note: overrideForm.value.note
+  })
+  overriding.value = false
+  if (error) {
+    alert(error.message)
+  } else {
+    showOverrideModal.value = false
+    await fetchData()
+  }
+}
+
 function isHoliday(day) {
   const dateStr = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   const date = new Date(dateStr)
@@ -207,7 +242,7 @@ function handlePrint() {
           <tbody>
             <tr v-for="row in attendanceMatrix" :key="row.id">
               <td class="sticky-col font-khmer">{{ row.name }}</td>
-              <td v-for="day in daysArray" :key="day" class="day-cell" :class="{ 'holiday': isHoliday(day) }">
+              <td v-for="day in daysArray" :key="day" class="day-cell" :class="{ 'holiday': isHoliday(day) }" @click="openOverride(row.id, row.name, day)" style="cursor:pointer;">
                 <span :class="row.days[day]">{{ getStatusChar(row.days[day]) }}</span>
               </td>
               <td class="text-center font-bold">{{ row.summary.present }}</td>
@@ -218,6 +253,50 @@ function handlePrint() {
             </tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Override Modal -->
+    <div v-if="showOverrideModal" class="modal-overlay" @click.self="showOverrideModal = false">
+      <div class="modal" style="max-width:400px;">
+        <div class="modal-header">
+          <span class="modal-title">កែប្រែវត្តមាន (Edit Attendance)</span>
+          <button class="btn btn-ghost btn-sm btn-icon" @click="showOverrideModal = false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <div style="font-weight:bold; color:var(--text-primary);">{{ overrideForm.teacher_name }}</div>
+            <div style="font-size:12px; color:var(--text-secondary);">{{ formatDate(overrideForm.date) }}</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ស្ថានភាព (Status)</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <button 
+                v-for="s in ['present', 'absent', 'late', 'permission']" :key="s"
+                class="btn btn-sm"
+                :class="overrideForm.status === s ? 'btn-primary' : 'btn-ghost'"
+                @click="overrideForm.status = s"
+                style="justify-content:center;"
+              >
+                {{ s === 'present' ? 'មក' : s === 'absent' ? 'អវត្តមាន' : s === 'late' ? 'យឺត' : 'ច្បាប់' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">ចំណាំ (Note)</label>
+            <textarea class="form-textarea" v-model="overrideForm.note" placeholder="មូលហេតុ..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" @click="showOverrideModal = false">បោះបង់</button>
+          <button class="btn btn-primary" @click="saveOverride" :disabled="overriding">
+            {{ overriding ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក' }}
+          </button>
+        </div>
       </div>
     </div>
 

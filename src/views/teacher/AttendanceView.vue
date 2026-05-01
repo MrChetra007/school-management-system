@@ -117,6 +117,13 @@ const summary = computed(() => {
   bulkEntries.value.forEach(e => { s[e.status]++ })
   return s
 })
+
+function markAllPresent() {
+  bulkEntries.value.forEach(e => {
+    e.status = 'present'
+    e.reason = ''
+  })
+}
 </script>
 
 <template>
@@ -148,14 +155,17 @@ const summary = computed(() => {
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
           <div class="form-group" style="width:200px;">
-            <label class="form-label">Date</label>
+            <label class="form-label">កាលបរិច្ឆេទ (Date)</label>
             <input class="form-input" type="date" v-model="selectedDate" @change="loadAttendance" />
           </div>
+          <button class="btn btn-ghost" @click="markAllPresent" :disabled="bulkEntries.length === 0" style="margin-top:14px; color:var(--primary-color);">
+            ✅ គូសទាំងអស់ថាមានវត្តមាន
+          </button>
           <div style="display:flex;gap:8px;flex:1;justify-content:flex-end;">
-            <span class="badge badge-green">Present: {{ summary.present }}</span>
-            <span class="badge badge-red">Absent: {{ summary.absent }}</span>
-            <span class="badge badge-yellow">Late: {{ summary.late }}</span>
-            <span class="badge badge-blue">Permission: {{ summary.permission }}</span>
+            <span class="badge badge-green">មក: {{ summary.present }}</span>
+            <span class="badge badge-red">អវត្តមាន: {{ summary.absent }}</span>
+            <span class="badge badge-yellow">យឺត: {{ summary.late }}</span>
+            <span class="badge badge-blue">ច្បាប់: {{ summary.permission }}</span>
           </div>
         </div>
       </div>

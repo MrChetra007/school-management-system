@@ -49,7 +49,8 @@ async function loadData() {
     classInfo.value = classData
     
     // Get Subjects
-    const { data: subData } = await supabase.from('subjects').select('*').order('subject_name')
+    const { data: subData, error: subError } = await supabase.from('subjects').select('*').order('subject_name')
+    if (subError) console.error('Error fetching subjects:', subError)
     subjects.value = subData || []
     if (subjects.value.length > 0) selectedSubject.value = subjects.value[0].id
 
