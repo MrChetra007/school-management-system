@@ -103,13 +103,10 @@ function initials(name) {
 
     <div class="page-header">
       <div>
-        <h1 class="page-title">Teachers</h1>
-        <p class="page-subtitle">{{ teachers.length }} staff members</p>
+        <h1 class="page-title">ប្រវត្តិរូបបុគ្គលិក (Staff Profiles)</h1>
+        <p class="page-subtitle">Personal profiles for all staff (Admin, Teachers, Librarians)</p>
       </div>
-      <button class="btn btn-primary" @click="openAdd">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add Teacher
-      </button>
+      <div class="badge badge-gray">Identity Manager</div>
     </div>
 
     <div class="filters-bar">

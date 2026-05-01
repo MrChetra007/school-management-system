@@ -244,7 +244,7 @@ function showToast(msg, type = 'success') {
     <div class="page-header">
       <div>
         <h1 class="page-title">គ្រប់គ្រងគណនីបុគ្គលិក (Staff Accounts)</h1>
-        <p class="page-subtitle">Every account includes a mandatory teacher profile (Roadmap v8)</p>
+        <p class="page-subtitle">Manage system access. Every account is linked to a mandatory teacher profile (Roadmap v10)</p>
       </div>
       <button class="btn btn-primary" @click="showCreateModal = true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM20 8v6M23 11h-6"/></svg>

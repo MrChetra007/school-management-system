@@ -1,85 +1,174 @@
 <script setup>
 import { ref } from 'vue'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'vue-router'
+import { supabase } from '@/lib/supabase'
 
 const router = useRouter()
-const studentIdOrName = ref('')
+const studentName = ref('')
 const dob = ref('')
-const loading = ref(false)
-const errorMsg = ref('')
+const searching = ref(false)
+const error = ref(null)
 
-async function search() {
-  if (!studentIdOrName.value || !dob.value) {
-    errorMsg.value = 'Please enter both ID/Name and Date of Birth'
+async function handleSearch() {
+  if (!studentName.value || !dob.value) {
+    error.value = 'សូមបញ្ជាក់ឈ្មោះ និង ថ្ងៃខែឆ្នាំកំណើត (Please enter name and DOB)'
     return
   }
-  
-  loading.value = true
-  errorMsg.value = ''
-  
-  // Search by real_id OR full_name AND matching dob
-  const { data, error } = await supabase
-    .from('students')
-    .select('id')
-    .or(`real_id.eq.${studentIdOrName.value},full_name.ilike.%${studentIdOrName.value}%`)
-    .eq('dob', dob.value)
-    .maybeSingle()
-  
-  loading.value = false
-  
-  if (data) {
-    router.push(`/parent/student/${data.id}`)
-  } else {
-    errorMsg.value = 'Student not found. Please check the details and try again.'
+
+  searching.value = true
+  error.value = null
+
+  try {
+    const { data, error: err } = await supabase
+      .from('students')
+      .select('id, full_name, dob')
+      .ilike('full_name', studentName.value.trim())
+      .eq('dob', dob.value)
+      .maybeSingle()
+
+    if (err) throw err
+    
+    if (data) {
+      router.push(`/parent/student/${data.id}`)
+    } else {
+      error.value = 'រកមិនឃើញសិស្សទេ សូមពិនិត្យឈ្មោះ និង ថ្ងៃកំណើតឡើងវិញ (Student not found. Please check name and DOB)'
+    }
+  } catch (err) {
+    error.value = 'មានបញ្ហាបច្ចេកទេស (Technical error)'
+    console.error(err)
+  } finally {
+    searching.value = false
   }
 }
 </script>
 
 <template>
-  <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
-    <div class="card" style="width: 100%; max-width: 450px; padding: 32px; box-shadow: var(--shadow-xl);">
-      <div style="text-align: center; margin-bottom: 32px;">
-        <div style="width: 64px; height: 64px; background: var(--primary-50); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px;">🎓</div>
-        <h1 style="font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em;">មើលព័ត៌មានកូន</h1>
-        <p style="color: var(--text-secondary); margin-top: 8px; font-size: 13px;">បញ្ចូលឈ្មោះ និងថ្ងៃខែឆ្នាំកំណើត</p>
+  <div class="search-view">
+    <div class="search-card">
+      <div class="search-header">
+        <div class="search-icon">🔍</div>
+        <h1 class="search-title">ស្វែងរកលទ្ធផលសិក្សាសិស្ស</h1>
+        <p class="search-subtitle">Student Academic Search</p>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 20px;">
+      <form @submit.prevent="handleSearch" class="search-form">
         <div class="form-group">
-          <label class="form-label">អត្តសញ្ញាណប័ណ្ណ ឬឈ្មោះពេញ</label>
+          <label class="form-label">ឈ្មោះសិស្ស (Student Name)</label>
           <input 
+            type="text" 
             class="form-input" 
-            v-model="studentIdOrName" 
-            placeholder="ឧទាហរណ៍៖ S-001 ឬ សុខ ចន្ថា" 
-            @keyup.enter="search"
+            v-model="studentName" 
+            placeholder="ឈ្មោះពេញ (Full Name)"
+            required
           />
         </div>
 
         <div class="form-group">
-          <label class="form-label">ថ្ងៃខែឆ្នាំកំណើត</label>
+          <label class="form-label">ថ្ងៃខែឆ្នាំកំណើត (Date of Birth)</label>
           <input 
-            class="form-input" 
             type="date" 
+            class="form-input" 
             v-model="dob" 
-            @keyup.enter="search"
+            required
           />
         </div>
 
-        <div v-if="errorMsg" class="badge badge-red" style="padding: 12px; border-radius: 8px; font-size: 13px; text-align: center; display: block;">
-          ⚠️ {{ errorMsg }}
+        <div v-if="error" class="error-msg">
+          {{ error }}
         </div>
 
-        <button class="btn btn-primary w-full" style="height: 44px; font-size: 15px; font-weight: 700;" @click="search" :disabled="loading">
-          {{ loading ? 'កំពុងស្វែងរក...' : '🔍 ស្វែងរកសិស្ស' }}
+        <button type="submit" class="btn btn-primary btn-lg" :disabled="searching" style="width:100%; justify-content:center; margin-top:12px;">
+          {{ searching ? 'កំពុងស្វែងរក...' : 'ស្វែងរក (Search)' }}
         </button>
-      </div>
+      </form>
+    </div>
 
-      <div style="margin-top: 32px; border-top: 1px solid var(--border-default); padding-top: 24px; text-align: center;">
-        <p style="font-size: 12px; color: var(--text-muted);">
-          Forgot student details? Please contact the school office.
-        </p>
-      </div>
+    <div class="search-tips">
+      <h3>សេចក្តីណែនាំ (Instructions):</h3>
+      <ul>
+        <li>សូមវាយឈ្មោះសិស្សឱ្យបានត្រឹមត្រូវតាមសំបុត្រកំណើត។</li>
+        <li>ជ្រើសរើសថ្ងៃខែឆ្នាំកំណើតរបស់សិស្ស។</li>
+        <li>ប្រព័ន្ធនឹងបង្ហាញព័ត៌មានវត្តមាន និង ពិន្ទុសិក្សា។</li>
+      </ul>
     </div>
   </div>
 </template>
+
+<style scoped>
+.search-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 32px;
+}
+
+.search-card {
+  background: white;
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: var(--shadow-xl);
+  max-width: 440px;
+  width: 100%;
+}
+
+.search-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.search-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.search-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.search-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.error-msg {
+  padding: 12px;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 8px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.search-tips {
+  max-width: 440px;
+  width: 100%;
+  color: var(--text-secondary);
+}
+
+.search-tips h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.search-tips ul {
+  padding-left: 20px;
+  font-size: 13px;
+}
+
+.search-tips li {
+  margin-bottom: 8px;
+}
+</style>

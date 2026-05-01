@@ -1,44 +1,51 @@
 /**
- * Score calculation logic as per roadmap.
- *
- * Monthly score: average of all subject scores for that month.
- * Semester score:
- *   1. monthly_average = avg of 3 monthly averages
- *   2. semester_exam_average = avg of semester exam subject scores
- *   3. semester_average = (monthly_average + semester_exam_average) / 2
+ * Computes the monthly average for a student.
+ * @param {Array} scores - Array of score objects for the month.
+ * @returns {number} Average rounded to 2 decimal places.
  */
-
-/**
- * @param {number[]} subjectScores
- * @returns {number}
- */
-export function calcMonthlyAverage(subjectScores) {
-  if (!subjectScores.length) return 0
-  const sum = subjectScores.reduce((a, b) => a + b, 0)
-  return parseFloat((sum / subjectScores.length).toFixed(2))
+export function computeMonthlyAverage(scores) {
+  if (!scores || scores.length === 0) return 0;
+  const validScores = scores.filter(s => s.score !== null && s.score !== undefined);
+  if (validScores.length === 0) return 0;
+  
+  const sum = validScores.reduce((acc, curr) => acc + Number(curr.score), 0);
+  return Number((sum / validScores.length).toFixed(2));
 }
 
 /**
- * @param {number[]} monthlyAverages  - e.g. [avg1, avg2, avg3]
- * @param {number[]} semesterExamScores - subject scores from the semester exam
- * @returns {{ monthlyPart: number, examPart: number, semesterAverage: number }}
+ * Computes the semester average.
+ * @param {Array} monthlyAverages - Array of monthly averages (e.g. [80, 85, 90]).
+ * @param {number} examAverage - The average of the semester exam subjects.
+ * @returns {number} Final semester average rounded to 2 decimal places.
  */
-export function calcSemesterAverage(monthlyAverages, semesterExamScores) {
-  const monthlyPart = calcMonthlyAverage(monthlyAverages)
-  const examPart = calcMonthlyAverage(semesterExamScores)
-  const semesterAverage = parseFloat(((monthlyPart + examPart) / 2).toFixed(2))
-  return { monthlyPart, examPart, semesterAverage }
+export function computeSemesterAverage(monthlyAverages, examAverage) {
+  const validMonths = monthlyAverages.filter(m => m !== null && m !== undefined && m > 0);
+  if (validMonths.length === 0) return Number(Number(examAverage).toFixed(2));
+
+  const monthlyAvg = validMonths.reduce((acc, curr) => acc + curr, 0) / validMonths.length;
+  return Number(((monthlyAvg + Number(examAverage)) / 2).toFixed(2));
 }
 
 /**
- * Grade letter from score (0–100)
- * @param {number} score
- * @returns {string}
+ * Computes the rank for a list of students based on their average.
+ * Logic: Ties share the same rank, next rank skips (e.g., 1, 1, 3).
+ * @param {Array} students - Array of objects containing { average }.
+ * @returns {Array} The same array with a 'rank' property added to each object.
  */
-export function gradeFromScore(score) {
-  if (score >= 90) return 'A'
-  if (score >= 80) return 'B'
-  if (score >= 70) return 'C'
-  if (score >= 60) return 'D'
-  return 'F'
+export function computeRank(students) {
+  if (!students || students.length === 0) return [];
+
+  // Sort students by average DESC
+  const sorted = [...students].sort((a, b) => (b.average || 0) - (a.average || 0));
+
+  let currentRank = 1;
+  for (let i = 0; i < sorted.length; i++) {
+    if (i > 0 && sorted[i].average === sorted[i - 1].average) {
+      sorted[i].rank = sorted[i - 1].rank;
+    } else {
+      sorted[i].rank = i + 1;
+    }
+  }
+
+  return sorted;
 }

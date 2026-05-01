@@ -1,201 +1,285 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
 
 const route = useRoute()
-const router = useRouter()
 const studentId = route.params.id
 const student = ref(null)
 const loading = ref(true)
-const activeTab = ref('overview')
-
-// Data for tabs
-const attendance = ref([])
+const attendance = ref({ present: 0, absent: 0, late: 0, permission: 0 })
 const scores = ref([])
-const health = ref({ growth: [], vaccinations: [], sickDays: [] })
+const growth = ref(null)
 
-onMounted(async () => {
-  await loadData()
-})
+onMounted(loadData)
 
 async function loadData() {
   loading.value = true
-  // 1. Student Info
-  const { data: stu } = await supabase
-    .from('students')
-    .select('*, classes(class_name, academic_years(year_name))')
-    .eq('id', studentId)
-    .single()
-  
-  if (!stu) { router.push('/parent/search'); return }
-  student.value = stu
+  try {
+    // 1. Fetch Student Info
+    const { data: stu } = await supabase
+      .from('students')
+      .select('*, classes(class_name)')
+      .eq('id', studentId)
+      .single()
+    student.value = stu
 
-  // 2. Attendance
-  const { data: att } = await supabase.from('attendances').select('*').eq('student_id', studentId).order('date', { ascending: false })
-  attendance.value = att || []
+    // 2. Fetch Attendance Summary
+    const { data: att } = await supabase
+      .from('student_attendances')
+      .select('status')
+      .eq('student_id', studentId)
+    
+    if (att) {
+      attendance.value = att.reduce((acc, curr) => {
+        acc[curr.status]++
+        return acc
+      }, { present: 0, absent: 0, late: 0, permission: 0 })
+    }
 
-  // 3. Scores
-  const { data: scr } = await supabase.from('scores').select('*, subjects(subject_name)').eq('student_id', studentId).order('month', { ascending: false })
-  scores.value = scr || []
+    // 3. Fetch Recent Scores
+    const { data: sc } = await supabase
+      .from('scores')
+      .select('*, subjects(subject_name)')
+      .eq('student_id', studentId)
+      .order('month', { ascending: false })
+      .limit(10)
+    scores.value = sc || []
 
-  // 4. Health
-  const { data: gr } = await supabase.from('student_growth').select('*').eq('student_id', studentId).order('date', { ascending: false })
-  const { data: vac } = await supabase.from('student_vaccinations').select('*').eq('student_id', studentId).order('date', { ascending: false })
-  const { data: sick } = await supabase.from('student_sick_days').select('*').eq('student_id', studentId).order('date', { ascending: false })
-  
-  health.value = { growth: gr || [], vaccinations: vac || [], sickDays: sick || [] }
-  
-  loading.value = false
-}
+    // 4. Fetch Latest Growth
+    const { data: grow } = await supabase
+      .from('student_growth')
+      .select('*')
+      .eq('student_id', studentId)
+      .order('check_date', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    growth.value = grow
 
-function initials(name) {
-  return (name || '').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
 <template>
-  <div>
-    <div v-if="loading" class="card card-body">
-      <div class="skeleton" style="height:200px; margin-bottom:20px;"></div>
-      <div class="skeleton" style="height:400px;"></div>
+  <div class="student-result-view">
+    <div v-if="loading" class="skeleton" style="height:400px; border-radius:24px;"></div>
+    
+    <div v-else-if="!student" class="empty-state">
+      <div class="empty-state-icon">❓</div>
+      <p class="empty-state-title">រកមិនឃើញព័ត៌មានសិស្សទេ (Student details not found)</p>
+      <router-link to="/parent" class="btn btn-primary mt-4">Go Back</router-link>
     </div>
 
-    <div v-else-if="student">
-      <!-- Header / Overview -->
-      <div class="card" style="margin-bottom:24px; padding:24px; border-bottom: 4px solid var(--primary-color);">
-        <div style="display:flex; gap:24px; align-items:center;">
-          <div class="avatar" style="width:80px; height:80px; font-size:24px;">{{ initials(student.full_name) }}</div>
-          <div style="flex:1;">
-            <h1 style="font-size:24px; font-weight:800; color:var(--text-primary);">{{ student.full_name }}</h1>
-            <div style="display:flex; gap:12px; margin-top:8px; flex-wrap:wrap;">
-              <span class="badge badge-blue">ID: {{ student.real_id || '—' }}</span>
-              <span class="badge badge-gray">Class: {{ student.classes?.class_name }}</span>
-              <span class="badge badge-gray">{{ student.classes?.academic_years?.year_name }}</span>
+    <div v-else class="result-content">
+      <!-- Profile Header -->
+      <div class="profile-card card">
+        <div class="profile-header">
+          <div class="avatar-large">{{ student.full_name.charAt(0) }}</div>
+          <div>
+            <h1 class="student-name">{{ student.full_name }}</h1>
+            <div class="student-meta">
+              <span class="badge badge-blue">ថ្នាក់: {{ student.classes?.class_name }}</span>
+              <span>ភេទ: {{ student.gender === 'M' ? 'ប្រុស' : 'ស្រី' }}</span>
+              <span>ថ្ងៃកំណើត: {{ formatDate(student.dob) }}</span>
             </div>
           </div>
-          <button class="btn btn-ghost" @click="router.push('/parent/search')">Back to Search</button>
         </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="tabs">
-        <div class="tab-item" :class="{ active: activeTab === 'overview' }" @click="activeTab = 'overview'">📊 Overview</div>
-        <div class="tab-item" :class="{ active: activeTab === 'attendance' }" @click="activeTab = 'attendance'">📅 Attendance</div>
-        <div class="tab-item" :class="{ active: activeTab === 'scores' }" @click="activeTab = 'scores'">⭐ Scores</div>
-        <div class="tab-item" :class="{ active: activeTab === 'health' }" @click="activeTab = 'health'">🩺 Health</div>
-      </div>
-
-      <!-- Tab Content -->
-      <div class="card">
-        
-        <!-- Overview Tab -->
-        <div v-if="activeTab === 'overview'" class="card-body">
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:32px;">
-            <div>
-              <h3 style="font-size:16px; margin-bottom:16px; font-weight:700;">Student Information</h3>
-              <div style="display:flex; flex-direction:column; gap:12px;">
-                <div style="display:flex; justify-content:space-between; font-size:13px;">
-                  <span style="color:var(--text-secondary);">Gender</span>
-                  <span style="font-weight:600;">{{ student.gender }}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:13px;">
-                  <span style="color:var(--text-secondary);">Date of Birth</span>
-                  <span style="font-weight:600;">{{ formatDate(student.dob) }}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:13px;">
-                  <span style="color:var(--text-secondary);">Address</span>
-                  <span style="font-weight:600;">{{ student.address || '—' }}</span>
-                </div>
-              </div>
+      <div class="stats-grid">
+        <!-- Attendance Stats -->
+        <div class="card stats-card">
+          <h3 class="card-title">វត្តមាន (Attendance)</h3>
+          <div class="attendance-summary">
+            <div class="att-item present">
+              <span class="att-count">{{ attendance.present }}</span>
+              <span class="att-label">វត្តមាន</span>
             </div>
-            <div>
-              <h3 style="font-size:16px; margin-bottom:16px; font-weight:700;">Performance Summary</h3>
-              <div class="grid-cols-2" style="gap:16px;">
-                <div style="padding:16px; background:#f0fdf4; border-radius:12px; text-align:center;">
-                  <div style="font-size:11px; color:#166534; font-weight:700; text-transform:uppercase;">Attendance</div>
-                  <div style="font-size:24px; font-weight:800; color:#15803d; margin-top:4px;">98%</div>
-                </div>
-                <div style="padding:16px; background:#eff6ff; border-radius:12px; text-align:center;">
-                  <div style="font-size:11px; color:#1e40af; font-weight:700; text-transform:uppercase;">Avg Grade</div>
-                  <div style="font-size:24px; font-weight:800; color:#1d4ed8; margin-top:4px;">B+</div>
-                </div>
-              </div>
+            <div class="att-item absent">
+              <span class="att-count">{{ attendance.absent }}</span>
+              <span class="att-label">អវត្តមាន</span>
+            </div>
+            <div class="att-item permission">
+              <span class="att-count">{{ attendance.permission }}</span>
+              <span class="att-label">ច្បាប់</span>
             </div>
           </div>
         </div>
 
-        <!-- Attendance Tab -->
-        <div v-if="activeTab === 'attendance'" class="table-wrapper">
-          <table v-if="attendance.length > 0">
-            <thead><tr><th>Date</th><th>Status</th><th>Reason</th></tr></thead>
-            <tbody>
-              <tr v-for="a in attendance" :key="a.id">
-                <td>{{ formatDate(a.date) }}</td>
-                <td><span class="badge" :class="a.status === 'present' ? 'badge-green' : 'badge-red'">{{ a.status }}</span></td>
-                <td>{{ a.reason || '—' }}</td>
+        <!-- Health/Growth -->
+        <div class="card stats-card">
+          <h3 class="card-title">សុខភាព & ការលូតលាស់ (Health)</h3>
+          <div v-if="growth" class="growth-info">
+            <div class="growth-item">
+              <span class="growth-label">កម្ពស់ (Height)</span>
+              <span class="growth-value">{{ growth.height_cm }} cm</span>
+            </div>
+            <div class="growth-item">
+              <span class="growth-label">ទម្ងន់ (Weight)</span>
+              <span class="growth-value">{{ growth.weight_kg }} kg</span>
+            </div>
+            <p class="last-check">កាលបរិច្ឆេទពិនិត្យ: {{ formatDate(growth.check_date) }}</p>
+          </div>
+          <p v-else class="empty-text">មិនទាន់មានទិន្នន័យ (No data)</p>
+        </div>
+      </div>
+
+      <!-- Score Table -->
+      <div class="card score-card">
+        <h3 class="card-title">លទ្ធផលសិក្សាចុងក្រោយ (Recent Scores)</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>មុខវិជ្ជា (Subject)</th>
+                <th>ខែ/ឆមាស (Period)</th>
+                <th>ពិន្ទុ (Score)</th>
               </tr>
-            </tbody>
-          </table>
-          <div v-else class="empty-state">No attendance records found.</div>
-        </div>
-
-        <!-- Scores Tab -->
-        <div v-if="activeTab === 'scores'" class="table-wrapper">
-          <table v-if="scores.length > 0">
-            <thead><tr><th>Subject</th><th>Type</th><th>Month/Sem</th><th>Score</th></tr></thead>
+            </thead>
             <tbody>
               <tr v-for="s in scores" :key="s.id">
-                <td style="font-weight:600;">{{ s.subjects?.subject_name }}</td>
-                <td><span class="badge badge-gray">{{ s.score_type }}</span></td>
-                <td>{{ s.score_type === 'monthly' ? s.month : 'Semester ' + s.semester }}</td>
-                <td><span class="badge" :class="s.score >= 50 ? 'badge-green' : 'badge-red'">{{ s.score }}</span></td>
+                <td style="font-weight:700;">{{ s.subjects?.subject_name }}</td>
+                <td>{{ s.score_type === 'monthly' ? `ខែទី ${s.month}` : `ឆមាសទី ${s.semester}` }}</td>
+                <td :class="{ 'text-danger': s.score < 50 }">
+                  <span class="score-badge">{{ s.score }}</span>
+                </td>
               </tr>
             </tbody>
           </table>
-          <div v-else class="empty-state">No scores recorded yet.</div>
         </div>
-
-        <!-- Health Tab -->
-        <div v-if="activeTab === 'health'" class="card-body">
-          <div style="display:flex; flex-direction:column; gap:32px;">
-            <!-- Growth -->
-            <div>
-              <h4 style="font-size:14px; font-weight:700; margin-bottom:12px;">📈 Growth Records</h4>
-              <div class="table-wrapper" style="border:1px solid var(--border-default); border-radius:8px;">
-                <table>
-                  <thead><tr><th>Date</th><th>Height (cm)</th><th>Weight (kg)</th></tr></thead>
-                  <tbody>
-                    <tr v-for="g in health.growth" :key="g.id">
-                      <td>{{ formatDate(g.date) }}</td>
-                      <td>{{ g.height }}</td>
-                      <td>{{ g.weight }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <!-- Sick Days -->
-            <div>
-              <h4 style="font-size:14px; font-weight:700; margin-bottom:12px;">🤒 Sick Days</h4>
-              <div class="table-wrapper" style="border:1px solid var(--border-default); border-radius:8px;">
-                <table>
-                  <thead><tr><th>Date</th><th>Duration</th><th>Reason</th></tr></thead>
-                  <tbody>
-                    <tr v-for="s in health.sickDays" :key="s.id">
-                      <td>{{ formatDate(s.date) }}</td>
-                      <td>{{ s.duration }} days</td>
-                      <td>{{ s.reason }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.student-result-view {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.profile-card {
+  padding: 32px;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+  color: white;
+  border: none;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.avatar-large {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 800;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.student-name {
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.student-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  opacity: 0.9;
+  align-items: center;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.attendance-summary {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 16px;
+}
+
+.att-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.att-count {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.att-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.att-item.present { color: #16a34a; }
+.att-item.absent { color: #dc2626; }
+.att-item.permission { color: #2563eb; }
+
+.growth-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.growth-item {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.growth-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.growth-value {
+  font-weight: 700;
+}
+
+.last-check {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.score-badge {
+  background: var(--bg-secondary);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.text-danger { color: #dc2626; }
+
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .profile-header { flex-direction: column; text-align: center; }
+  .student-meta { justify-content: center; flex-wrap: wrap; }
+}
+</style>

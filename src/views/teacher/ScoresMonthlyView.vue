@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
-import { gradeFromScore } from '@/utils/scoreCalculator'
+import { computeMonthlyAverage, computeRank } from '@/utils/scoreCalculator'
+import { generateMonthlyScorePDF } from '@/utils/exportPdf'
 
 const auth = useAuthStore()
 const students = ref([])
@@ -13,9 +14,8 @@ const saving = ref(false)
 const toast = ref(null)
 
 const selectedMonth = ref(new Date().getMonth() + 1)
-const selectedSubject = ref('')
-const scores = ref([])
-const bulkEntries = ref([])
+const scores = ref([]) // Raw scores from DB
+const scoreMatrix = ref([]) // Transformed data for the table
 
 const months = [
   { id: 1, name: 'January' }, { id: 2, name: 'February' }, { id: 3, name: 'March' },
@@ -48,13 +48,11 @@ async function loadData() {
   if (classData) {
     classInfo.value = classData
     
-    // Get Subjects
-    const { data: subData, error: subError } = await supabase.from('subjects').select('*').order('subject_name')
-    if (subError) console.error('Error fetching subjects:', subError)
+    // 1. Get All Subjects
+    const { data: subData } = await supabase.from('subjects').select('*').order('subject_name')
     subjects.value = subData || []
-    if (subjects.value.length > 0) selectedSubject.value = subjects.value[0].id
 
-    // Get Students
+    // 2. Get All Students
     const { data: stuData } = await supabase
       .from('students')
       .select('id, full_name')
@@ -62,89 +60,146 @@ async function loadData() {
       .order('full_name')
     students.value = stuData || []
     
-    await loadScores()
+    await fetchScores()
   }
   loading.value = false
 }
 
-async function loadScores() {
-  if (!classInfo.value || !selectedSubject.value || !selectedMonth.value) return
+async function fetchScores() {
+  if (!classInfo.value || students.value.length === 0) return
   
-  const studentIds = students.value.map(s => s.id)
   const { data } = await supabase
     .from('scores')
     .select('*')
-    .in('student_id', studentIds)
-    .eq('subject_id', selectedSubject.value)
+    .in('student_id', students.value.map(s => s.id))
     .eq('month', selectedMonth.value)
     .eq('score_type', 'monthly')
   
-  const scoreMap = {}
-  data?.forEach(s => { scoreMap[s.student_id] = s })
-  
-  bulkEntries.value = students.value.map(s => {
-    const existing = scoreMap[s.id]
-    return {
-      student_id: s.id,
-      full_name: s.full_name,
-      score: existing?.score ?? '',
-      existing_id: existing?.id
-    }
-  })
+  scores.value = data || []
+  buildMatrix()
 }
 
-async function save() {
-  if (!selectedSubject.value) { showToast('Select a subject first', 'error'); return }
+function buildMatrix() {
+  const matrix = students.value.map(student => {
+    const studentScores = {}
+    subjects.value.forEach(sub => {
+      const match = scores.value.find(s => s.student_id === student.id && s.subject_id === sub.id)
+      studentScores[sub.id] = {
+        score: match?.score ?? '',
+        id: match?.id ?? null
+      }
+    })
+
+    return {
+      student_id: student.id,
+      full_name: student.full_name,
+      subjects: studentScores,
+      average: 0,
+      rank: 0
+    }
+  })
+
+  scoreMatrix.value = matrix
+  calculateAll()
+}
+
+function calculateAll() {
+  // 1. Calculate Averages
+  scoreMatrix.value.forEach(row => {
+    const scoresArray = Object.values(row.subjects)
+      .filter(s => s.score !== '')
+      .map(s => ({ score: s.score }))
+    row.average = computeMonthlyAverage(scoresArray)
+  })
+
+  // 2. Calculate Ranks
+  const ranked = computeRank(scoreMatrix.value)
+  // computeRank returns a sorted array, we need to map back to our original list if we want to keep alphabetical order
+  // Actually, Roadmap says "list view", we can keep alphabetical or ranked.
+  // Usually, teachers prefer alphabetical for entry.
+  scoreMatrix.value = ranked.sort((a, b) => a.full_name.localeCompare(b.full_name))
+}
+
+async function saveAll() {
   saving.value = true
-  
-  for (const entry of bulkEntries.value) {
-    if (entry.score === '' || entry.score === null) continue
-    
-    const payload = {
-      student_id: entry.student_id,
-      subject_id: selectedSubject.value,
-      academic_year_id: classInfo.value.academic_year_id,
-      score_type: 'monthly',
-      month: selectedMonth.value,
-      score: Number(entry.score)
-    }
-    
-    if (entry.existing_id) {
-      await supabase.from('scores').update({ score: payload.score }).eq('id', entry.existing_id)
-    } else {
-      await supabase.from('scores').insert(payload)
-    }
+  const toUpsert = []
+
+  scoreMatrix.value.forEach(row => {
+    Object.entries(row.subjects).forEach(([subId, data]) => {
+      if (data.score === '') return
+      
+      const payload = {
+        student_id: row.student_id,
+        subject_id: subId,
+        academic_year_id: classInfo.value.academic_year_id,
+        score_type: 'monthly',
+        month: selectedMonth.value,
+        score: Number(data.score)
+      }
+      if (data.id) payload.id = data.id
+      toUpsert.push(payload)
+    })
+  })
+
+  if (toUpsert.length > 0) {
+    const { error } = await supabase.from('scores').upsert(toUpsert)
+    if (error) showToast(error.message, 'error')
+    else showToast('All scores saved!', 'success')
   }
-  
+
   saving.value = false
-  showToast('Scores saved successfully!', 'success')
-  await loadScores()
+  await fetchScores()
+}
+
+const printArea = ref(null)
+async function handleExport() {
+  if (!printArea.value) return
+  const metadata = {
+    schoolName: 'Primary School', // Could be dynamic
+    className: classInfo.value?.class_name,
+    month: months.find(m => m.id === selectedMonth.value)?.name,
+    year: classInfo.value?.academic_years?.year_name
+  }
+  try {
+    await generateMonthlyScorePDF(printArea.value, metadata)
+    showToast('PDF Generated!', 'success')
+  } catch (e) {
+    showToast('Failed to generate PDF', 'error')
+  }
 }
 
 function showToast(msg, type = 'success') {
   toast.value = { msg, type }
   setTimeout(() => { toast.value = null }, 3000)
 }
+
+watch(selectedMonth, fetchScores)
 </script>
 
 <template>
-  <div>
+  <div class="scores-monthly-view">
     <div class="toast-container">
       <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
     </div>
 
-    <div class="page-header">
+    <div class="page-header no-print">
       <div>
-        <h1 class="page-title">Monthly Scores</h1>
-        <p class="page-subtitle" v-if="classInfo">Class: <strong>{{ classInfo.class_name }}</strong></p>
+        <h1 class="page-title">Monthly Score Entry</h1>
+        <p class="page-subtitle" v-if="classInfo">Managing <strong>{{ classInfo.class_name }}</strong> ({{ classInfo.academic_years?.year_name }})</p>
       </div>
-      <button v-if="classInfo" class="btn btn-primary" @click="save" :disabled="saving">
-        {{ saving ? 'Saving…' : '💾 Save Scores' }}
-      </button>
+      <div style="display:flex; gap:12px;">
+        <button class="btn btn-secondary" @click="handleExport" :disabled="loading || scoreMatrix.length === 0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Print PDF
+        </button>
+        <button class="btn btn-primary" @click="saveAll" :disabled="saving || loading">
+          {{ saving ? 'Saving…' : '💾 Save All' }}
+        </button>
+      </div>
     </div>
 
     <div v-if="loading" class="card card-body">
-      <div v-for="i in 5" :key="i" class="skeleton" style="height:52px;margin-bottom:10px;border-radius:8px;"></div>
+      <div class="skeleton" style="height:400px; border-radius:12px;"></div>
     </div>
 
     <div v-else-if="!classInfo" class="empty-state">
@@ -153,62 +208,158 @@ function showToast(msg, type = 'success') {
     </div>
 
     <div v-else>
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-body" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
-          <div class="form-group" style="width:180px;">
-            <label class="form-label">Month</label>
-            <select class="form-select" v-model="selectedMonth" @change="loadScores">
+      <!-- Filters -->
+      <div class="card no-print" style="margin-bottom:20px;">
+        <div class="card-body">
+          <div class="form-group" style="width:240px;">
+            <label class="form-label">Select Month</label>
+            <select class="form-select" v-model="selectedMonth">
               <option v-for="m in months" :key="m.id" :value="m.id">{{ m.name }}</option>
-            </select>
-          </div>
-          <div class="form-group" style="width:200px;">
-            <label class="form-label">Subject</label>
-            <select class="form-select" v-model="selectedSubject" @change="loadScores">
-              <option v-for="s in subjects" :key="s.id" :value="s.id">{{ s.subject_name }}</option>
             </select>
           </div>
         </div>
       </div>
 
-      <div class="card">
-        <div v-if="bulkEntries.length === 0" class="empty-state">
-          <div class="empty-state-icon">🎓</div>
-          <p class="empty-state-title">No students found</p>
+      <!-- Score Matrix -->
+      <div class="card" ref="printArea">
+        <div class="print-header only-print">
+          <h2>បញ្ជីពិន្ទុប្រចាំខែ (Monthly Score Report)</h2>
+          <div style="display:flex; justify-content:space-between; margin-top:10px;">
+            <span>ថ្នាក់: {{ classInfo.class_name }}</span>
+            <span>ខែ: {{ months.find(m => m.id === selectedMonth)?.name }}</span>
+            <span>ឆ្នាំសិក្សា: {{ classInfo.academic_years?.year_name }}</span>
+          </div>
         </div>
-        <div v-else class="table-wrapper">
-          <table>
+
+        <div class="table-wrapper horizontal-scroll">
+          <table class="matrix-table">
             <thead>
-              <tr><th>Student</th><th style="width:150px;">Score (0-100)</th><th style="width:100px;">Grade</th></tr>
+              <tr>
+                <th style="width:50px;">ល.រ</th>
+                <th style="min-width:180px; text-align:left;">ឈ្មោះសិស្ស</th>
+                <th v-for="sub in subjects" :key="sub.id" class="sub-col">
+                  <div class="vertical-text">{{ sub.subject_name }}</div>
+                </th>
+                <th class="summary-col">មធ្យម</th>
+                <th class="summary-col">លំដាប់</th>
+              </tr>
             </thead>
             <tbody>
-              <tr v-for="entry in bulkEntries" :key="entry.student_id">
-                <td style="font-weight:600;">{{ entry.full_name }}</td>
-                <td>
+              <tr v-for="(row, idx) in scoreMatrix" :key="row.student_id">
+                <td style="text-align:center;">{{ idx + 1 }}</td>
+                <td style="font-weight:700; text-align:left;">{{ row.full_name }}</td>
+                <td v-for="sub in subjects" :key="sub.id">
                   <input 
-                    type="number"
-                    class="form-input" 
-                    v-model="entry.score" 
+                    type="number" 
+                    class="score-input"
+                    v-model="row.subjects[sub.id].score"
                     min="0" max="100"
-                    placeholder="Score…"
-                    @keyup.enter="save"
+                    @input="calculateAll"
                   />
                 </td>
-                <td>
-                  <span v-if="entry.score !== ''" class="badge" :class="Number(entry.score) >= 50 ? 'badge-green' : 'badge-red'">
-                    {{ gradeFromScore(entry.score) }}
-                  </span>
-                  <span v-else>—</span>
-                </td>
+                <td class="avg-cell" :class="{ 'text-danger': row.average < 50 }">{{ row.average }}</td>
+                <td class="rank-cell">{{ row.rank }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div v-if="bulkEntries.length > 0" class="card-footer" style="display:flex;justify-content:flex-end;">
-          <button class="btn btn-primary" @click="save" :disabled="saving">
-            {{ saving ? 'Saving…' : '💾 Save Scores' }}
-          </button>
+
+        <div class="print-footer only-print" style="margin-top:40px; display:flex; justify-content:flex-end; padding:20px;">
+          <div style="text-align:center;">
+            <p>ថ្ងៃទី........ ខែ........ ឆ្នាំ២០........</p>
+            <p style="margin-top:10px; font-weight:700;">ហត្ថលេខាគ្រូបន្ទុកថ្នាក់</p>
+            <div style="height:60px;"></div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.scores-monthly-view {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.matrix-table th, .matrix-table td {
+  border: 1px solid var(--border-default);
+  padding: 8px;
+  text-align: center;
+}
+
+.matrix-table th {
+  background: #f8fafc;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.sub-col {
+  width: 50px;
+  height: 100px;
+  vertical-align: bottom;
+  padding-bottom: 12px !important;
+}
+
+.vertical-text {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  display: inline-block;
+}
+
+.score-input {
+  width: 44px;
+  padding: 4px;
+  border: 1px solid transparent;
+  text-align: center;
+  font-weight: 600;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.score-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background: #f1f5f9;
+}
+
+.score-input::-webkit-inner-spin-button,
+.score-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.avg-cell {
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.rank-cell {
+  font-weight: 800;
+  color: var(--primary-color);
+  background: #eff6ff;
+}
+
+.text-danger { color: #ef4444; }
+
+.only-print { display: none; }
+
+@media print {
+  .no-print { display: none !important; }
+  .only-print { display: block !important; }
+  .matrix-table { font-size: 10px; }
+  .score-input { border: none; background: transparent; }
+  .card { box-shadow: none; border: none; }
+  .print-header { text-align: center; margin-bottom: 20px; }
+  .print-header h2 { font-size: 18px; margin-bottom: 5px; }
+}
+</style>
