@@ -57,36 +57,26 @@ const chartOptions = {
   }
 }
 
-// Computed chart data
-const sortedGrowth = computed(() => {
-  return [...growth.value].sort((a, b) => new Date(a.date) - new Date(b.date))
+// Growth Summary & Progress
+const latestGrowth = computed(() => {
+  if (growth.value.length === 0) return null
+  return growth.value[0]
 })
 
-const heightChartData = computed(() => ({
-  labels: sortedGrowth.value.map(g => formatDate(g.date)),
-  datasets: [
-    {
-      label: 'Height (cm)',
-      backgroundColor: '#3b82f6',
-      borderColor: '#3b82f6',
-      data: sortedGrowth.value.map(g => g.height),
-      tension: 0.3
+const growthHistory = computed(() => {
+  return growth.value.map((g, index) => {
+    const prev = growth.value[index + 1]
+    return {
+      ...g,
+      heightDelta: prev ? (g.height - prev.height).toFixed(1) : null,
+      weightDelta: prev ? (g.weight - prev.weight).toFixed(1) : null
     }
-  ]
-}))
+  })
+})
 
-const weightChartData = computed(() => ({
-  labels: sortedGrowth.value.map(g => formatDate(g.date)),
-  datasets: [
-    {
-      label: 'Weight (kg)',
-      backgroundColor: '#10b981',
-      borderColor: '#10b981',
-      data: sortedGrowth.value.map(g => g.weight),
-      tension: 0.3
-    }
-  ]
-}))
+// Sick Days form
+const showSickDayModal = ref(false)
+const sickDayForm = ref({ id: null, date: '', reason: '', duration: 1, notes: '' })
 
 // Health form
 const healthForm = ref({ id: null, blood_type: '', allergies: '', medical_conditions: '', emergency_contact_name: '', emergency_contact_phone: '', vaccination_complete: false })
@@ -178,6 +168,27 @@ async function saveVaccine() {
   loadVaccinations()
 }
 
+async function saveSickDay() {
+  saving.value = true
+  const { id, ...payload } = { ...sickDayForm.value, student_id: studentId }
+  const { error } = id
+    ? await supabase.from('student_sick_days').update(payload).eq('id', id)
+    : await supabase.from('student_sick_days').insert(payload)
+  saving.value = false
+  if (error) { showToast(error.message, 'error'); return }
+  showToast('Sick day saved!', 'success')
+  showSickDayModal.value = false
+  loadSickDays()
+}
+
+async function deleteSickDay(id) {
+  if (!confirm('Are you sure you want to delete this sick day record?')) return
+  const { error } = await supabase.from('student_sick_days').delete().eq('id', id)
+  if (error) { showToast(error.message, 'error'); return }
+  showToast('Sick day deleted', 'success')
+  loadSickDays()
+}
+
 function openCheckup(c = null) {
   checkupForm.value = c ? { ...c, date: toInputDate(c.date) } : { id: null, date: '', type: '', result: '', vision: '', hearing: '', dental: '', notes: '' }
   showCheckupModal.value = true
@@ -189,6 +200,10 @@ function openGrowth(g = null) {
 function openVaccine(v = null) {
   vaccineForm.value = v ? { ...v, date: toInputDate(v.date) } : { id: null, name: '', description: '', completed: false, date: '' }
   showVaccineModal.value = true
+}
+function openSickDay(s = null) {
+  sickDayForm.value = s ? { ...s, date: toInputDate(s.date) } : { id: null, date: '', reason: '', duration: 1, notes: '' }
+  showSickDayModal.value = true
 }
 
 function showToast(msg, type = 'success') {
@@ -316,22 +331,32 @@ function initials(name) {
 
       <!-- Growth -->
       <div v-if="activeTab === 'growth'">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
           <h3 class="card-title">Growth Tracking</h3>
           <button class="btn btn-primary btn-sm" @click="openGrowth()">+ Add Record</button>
         </div>
 
-        <div v-if="growth.length > 0" class="grid-cols-2" style="margin-bottom:20px; gap:20px;">
-          <div class="card">
-            <div class="card-header"><span class="card-title" style="font-size:14px;">Height Trend</span></div>
-            <div class="card-body" style="height:250px;">
-              <Line :data="heightChartData" :options="chartOptions" />
+        <!-- Summary Cards -->
+        <div v-if="latestGrowth" class="grid-cols-3" style="margin-bottom:20px; gap:16px;">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#eff6ff;color:#3b82f6;">📏</div>
+            <div class="stat-info">
+              <div class="stat-label">Latest Height</div>
+              <div class="stat-value">{{ latestGrowth.height }} <span style="font-size:14px;font-weight:500;">cm</span></div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-header"><span class="card-title" style="font-size:14px;">Weight Trend</span></div>
-            <div class="card-body" style="height:250px;">
-              <Line :data="weightChartData" :options="chartOptions" />
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#ecfdf5;color:#10b981;">⚖️</div>
+            <div class="stat-info">
+              <div class="stat-label">Latest Weight</div>
+              <div class="stat-value">{{ latestGrowth.weight }} <span style="font-size:14px;font-weight:500;">kg</span></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#fff7ed;color:#f97316;">📅</div>
+            <div class="stat-info">
+              <div class="stat-label">Last Check</div>
+              <div class="stat-value" style="font-size:18px;margin-top:8px;">{{ formatDate(latestGrowth.date) }}</div>
             </div>
           </div>
         </div>
@@ -340,13 +365,27 @@ function initials(name) {
           <div v-if="growth.length === 0" class="empty-state"><div class="empty-state-icon">📏</div><p class="empty-state-title">No growth records</p></div>
           <div v-else class="table-wrapper">
             <table>
-              <thead><tr><th>Date</th><th>Age</th><th>Height (cm)</th><th>Weight (kg)</th><th></th></tr></thead>
+              <thead><tr><th>Date</th><th>Age</th><th>Height (cm)</th><th>Weight (kg)</th><th>Actions</th></tr></thead>
               <tbody>
-                <tr v-for="g in growth" :key="g.id">
+                <tr v-for="g in growthHistory" :key="g.id">
                   <td>{{ formatDate(g.date) }}</td>
                   <td>{{ g.age || '—' }}</td>
-                  <td style="font-weight:600;">{{ g.height || '—' }}</td>
-                  <td style="font-weight:600;">{{ g.weight || '—' }}</td>
+                  <td>
+                    <div style="font-weight:600;display:flex;align-items:center;gap:8px;">
+                      {{ g.height }}
+                      <span v-if="g.heightDelta" :style="{ color: g.heightDelta > 0 ? '#10b981' : '#ef4444', fontSize: '11px' }">
+                        ({{ g.heightDelta > 0 ? '+' : '' }}{{ g.heightDelta }})
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="font-weight:600;display:flex;align-items:center;gap:8px;">
+                      {{ g.weight }}
+                      <span v-if="g.weightDelta" :style="{ color: g.weightDelta > 0 ? '#10b981' : '#ef4444', fontSize: '11px' }">
+                        ({{ g.weightDelta > 0 ? '+' : '' }}{{ g.weightDelta }})
+                      </span>
+                    </div>
+                  </td>
                   <td><button class="btn btn-ghost btn-sm btn-icon" @click="openGrowth(g)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
                 </tr>
               </tbody>
@@ -380,20 +419,31 @@ function initials(name) {
       </div>
 
       <!-- Sick Days -->
-      <div v-if="activeTab === 'sickdays'" class="card">
-        <div v-if="sickDays.length === 0" class="empty-state"><div class="empty-state-icon">🤒</div><p class="empty-state-title">No sick days recorded</p></div>
-        <div v-else class="table-wrapper">
-          <table>
-            <thead><tr><th>Date</th><th>Reason</th><th>Duration (days)</th><th>Notes</th></tr></thead>
-            <tbody>
-              <tr v-for="s in sickDays" :key="s.id">
-                <td>{{ formatDate(s.date) }}</td>
-                <td>{{ s.reason || '—' }}</td>
-                <td><span class="badge badge-red">{{ s.duration || 1 }} day{{ s.duration > 1 ? 's' : '' }}</span></td>
-                <td>{{ s.notes || '—' }}</td>
-              </tr>
-            </tbody>
-          </table>
+      <div v-if="activeTab === 'sickdays'">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+          <button class="btn btn-primary btn-sm" @click="openSickDay()">+ Add Sick Day</button>
+        </div>
+        <div class="card">
+          <div v-if="sickDays.length === 0" class="empty-state"><div class="empty-state-icon">🤒</div><p class="empty-state-title">No sick days recorded</p></div>
+          <div v-else class="table-wrapper">
+            <table>
+              <thead><tr><th>Date</th><th>Reason</th><th>Duration (days)</th><th>Notes</th><th></th></tr></thead>
+              <tbody>
+                <tr v-for="s in sickDays" :key="s.id">
+                  <td>{{ formatDate(s.date) }}</td>
+                  <td>{{ s.reason || '—' }}</td>
+                  <td><span class="badge badge-red">{{ s.duration || 1 }} day{{ s.duration > 1 ? 's' : '' }}</span></td>
+                  <td>{{ s.notes || '—' }}</td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-ghost btn-sm btn-icon" @click="openSickDay(s)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                      <button class="btn btn-danger btn-sm btn-icon" @click="deleteSickDay(s.id)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </template>
@@ -438,6 +488,18 @@ function initials(name) {
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;"><input type="checkbox" v-model="vaccineForm.completed" style="width:15px;height:15px;"/> Completed</label>
         </div>
         <div class="modal-footer"><button class="btn btn-ghost" @click="showVaccineModal=false">Cancel</button><button class="btn btn-primary" @click="saveVaccine" :disabled="saving">{{ saving ? 'Saving…' : 'Save' }}</button></div>
+      </div>
+    </div>
+    <div v-if="showSickDayModal" class="modal-overlay" @click.self="showSickDayModal=false">
+      <div class="modal" style="max-width:420px;">
+        <div class="modal-header"><span class="modal-title">{{ sickDayForm.id ? 'Edit' : 'Add' }} Sick Day</span><button class="btn btn-ghost btn-sm btn-icon" @click="showSickDayModal=false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;">
+          <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" v-model="sickDayForm.date"/></div>
+          <div class="form-group"><label class="form-label">Reason *</label><input class="form-input" v-model="sickDayForm.reason" placeholder="e.g. Flu, Stomach ache"/></div>
+          <div class="form-group"><label class="form-label">Duration (days)</label><input class="form-input" type="number" v-model="sickDayForm.duration"/></div>
+          <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" v-model="sickDayForm.notes" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-ghost" @click="showSickDayModal=false">Cancel</button><button class="btn btn-primary" @click="saveSickDay" :disabled="saving">{{ saving ? 'Saving…' : 'Save' }}</button></div>
       </div>
     </div>
   </div>
