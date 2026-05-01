@@ -1,66 +1,117 @@
--- Migration: Roadmap v10 Identity Enforcements
--- Every user MUST have a teacher profile.
+-- ============================================================
+-- MIGRATION: v5 → v6
+-- Primary School Management System
+-- Run this on your existing Supabase project (after schema_v5)
+--
+-- Change: Add class_subjects junction table
+-- Reason: Different grades have different subjects
+--         (Grade 1-3 no English, Grade 4-6 has English)
+--         Subjects are now assigned per class, not global
+-- ============================================================
 
--- 1. Create teacher profiles for any users that don't have one (orphans)
-insert into public.teachers (user_id, full_name, email)
-select id, 'Staff Member', email
-from public.users
-where id not in (select user_id from public.teachers)
-on conflict (user_id) do nothing;
 
--- 2. Ensure teachers table has the correct constraints (Roadmap v10)
--- These should already exist if using schema_v5, but we reinforce them here.
-alter table public.teachers 
-alter column user_id set not null;
+-- ============================================================
+-- 1. NEW TABLE: class_subjects
+-- Junction table linking subjects to specific classes
+-- ============================================================
 
--- 3. Add a check to prevent users from being deleted without deleting the teacher (handled by cascade delete in schema)
--- No action needed if 'references users(id) on delete cascade' is active.
+create table class_subjects (
+  id         uuid primary key default uuid_generate_v4(),
+  class_id   uuid not null references classes(id) on delete cascade,
+  subject_id uuid not null references subjects(id) on delete cascade,
+  created_at timestamptz default now(),
+  unique(class_id, subject_id)    -- no duplicate subject per class
+);
 
--- 4. RLS Policy: Allow all authenticated staff to read all teacher profiles
--- This is necessary so they can see names in lists, class assignments, etc.
-drop policy if exists "teachers: staff read all" on public.teachers;
-create policy "teachers: staff read all"
-  on public.teachers for select to authenticated
-  using (true);
+-- Enable RLS
+alter table class_subjects enable row level security;
 
--- 5. RLS Policy: Allow users to update their own teacher profile
-drop policy if exists "teachers: self update" on public.teachers;
-create policy "teachers: self update"
-  on public.teachers for update to authenticated
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
 
--- 6. PARENT PORTAL ACCESS (Roadmap v10)
--- Allow anon to search students by name and dob
-drop policy if exists "students: anon search" on public.students;
-create policy "students: anon search"
-  on public.students for select to anon
-  using (true);
+-- ============================================================
+-- 2. RLS POLICIES: class_subjects
+-- ============================================================
 
--- Allow anon to read scores for a specific student
-drop policy if exists "scores: anon read" on public.scores;
-create policy "scores: anon read"
-  on public.scores for select to anon
-  using (true);
+-- Admin full access
+create policy "class_subjects: admin full"
+  on class_subjects for all to authenticated
+  using (get_user_role() = 'admin')
+  with check (get_user_role() = 'admin');
 
--- Allow anon to read attendance for a specific student
-drop policy if exists "student_attendances: anon read" on public.student_attendances;
-create policy "student_attendances: anon read"
-  on public.student_attendances for select to anon
-  using (true);
+-- Teacher can read subjects for their own class only
+create policy "class_subjects: teacher read own class"
+  on class_subjects for select to authenticated
+  using (
+    get_user_role() = 'teacher' and
+    class_id in (
+      select id from classes
+      where teacher_id = (select id from teachers where user_id = auth.uid())
+    )
+  );
 
--- Allow anon to read health/growth/vaccinations for a specific student
-drop policy if exists "student_growth: anon read" on public.student_growth;
-create policy "student_growth: anon read"
-  on public.student_growth for select to anon
-  using (true);
+-- Librarian read
+create policy "class_subjects: librarian read"
+  on class_subjects for select to authenticated
+  using (get_user_role() = 'librarian');
 
-drop policy if exists "student_vaccinations: anon read" on public.student_vaccinations;
-create policy "student_vaccinations: anon read"
-  on public.student_vaccinations for select to anon
-  using (true);
 
-drop policy if exists "student_sick_days: anon read" on public.student_sick_days;
-create policy "student_sick_days: anon read"
-  on public.student_sick_days for select to anon
-  using (true);
+-- ============================================================
+-- 3. SEED: Assign subjects to existing classes
+-- Based on seed_data.sql classes:
+--   Grade 1 (ថ្នាក់ទី១ក, ១ខ) → no English
+--   Grade 2 (ថ្នាក់ទី២ក, ២ខ) → no English
+--   Grade 3 (ថ្នាក់ទី៣ក)     → no English
+-- Adjust if you have Grade 4-6 classes
+-- ============================================================
+
+-- Subjects without English (Grade 1-3):
+-- ភាសាខ្មែរ, គណិតវិទ្យា, វិទ្យាសាស្ត្រ, សិក្សាសង្គម, សិល្បៈ, អប់រំកាយ
+
+insert into class_subjects (class_id, subject_id)
+select c.id, s.id
+from classes c
+cross join subjects s
+where s.subject_name != 'ភាសាអង់គ្លេស'  -- exclude English for all existing classes
+on conflict do nothing;
+
+-- ============================================================
+-- NOTE: For Grade 4-6 classes, run this to add English:
+--
+-- insert into class_subjects (class_id, subject_id)
+-- select c.id, s.id
+-- from classes c
+-- cross join subjects s
+-- where c.class_name like 'ថ្នាក់ទី៤%'   -- adjust grade name pattern
+--   or  c.class_name like 'ថ្នាក់ទី៥%'
+--   or  c.class_name like 'ថ្នាក់ទី៦%'
+-- and s.subject_name = 'ភាសាអង់គ្លេស'
+-- on conflict do nothing;
+-- ============================================================
+
+
+-- ============================================================
+-- VERIFY: Check everything applied correctly
+-- ============================================================
+
+-- 1. Count rows in class_subjects
+select 'class_subjects rows' as item, count(*)::text as result
+from class_subjects;
+
+-- 2. Count RLS policies
+select 'class_subjects RLS policies' as item, count(*)::text as result
+from pg_policies
+where tablename = 'class_subjects';
+
+-- 3. Show each class with its assigned subjects
+select
+  c.class_name,
+  string_agg(s.subject_name, ', ' order by s.subject_name) as subjects
+from class_subjects cs
+join classes c on c.id = cs.class_id
+join subjects s on s.id = cs.subject_id
+group by c.class_name
+order by c.class_name;
+
+
+-- ============================================================
+-- DONE — Migration v5 → v6 complete
+-- ============================================================

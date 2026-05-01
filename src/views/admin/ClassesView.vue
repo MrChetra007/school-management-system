@@ -15,8 +15,9 @@ const deleteTarget = ref(null)
 const toast = ref(null)
 const search = ref('')
 
-const emptyForm = () => ({ id: null, class_name: '', teacher_id: '', academic_year_id: yearStore.selectedYearId, turn: 'morning' })
+const emptyForm = () => ({ id: null, class_name: '', teacher_id: '', academic_year_id: yearStore.selectedYearId, turn: 'morning', subjects: [] })
 const form = ref(emptyForm())
+const allSubjects = ref([])
 
 const filtered = computed(() => {
   const q = search.value.toLowerCase()
@@ -24,39 +25,83 @@ const filtered = computed(() => {
 })
 
 onMounted(async () => {
-  await Promise.all([loadClasses(), loadTeachers()])
+  await Promise.all([loadClasses(), loadTeachers(), loadAllSubjects()])
 })
 
 async function loadClasses() {
   loading.value = true
   const { data } = await supabase
     .from('classes')
-    .select('*, teachers(full_name), academic_years(year_name)')
+    .select(`
+      *,
+      teachers(full_name),
+      academic_years(year_name),
+      class_subjects(subject_id, subjects(subject_name))
+    `)
     .eq('academic_year_id', yearStore.selectedYearId)
     .order('class_name')
   classes.value = data || []
   loading.value = false
 }
+
 async function loadTeachers() {
   const { data } = await supabase.from('teachers').select('id, full_name').order('full_name')
   teachers.value = data || []
 }
 
+async function loadAllSubjects() {
+  const { data } = await supabase.from('subjects').select('*').order('subject_name')
+  allSubjects.value = data || []
+}
+
 function openAdd() { isEdit.value = false; form.value = emptyForm(); showModal.value = true }
-function openEdit(c) { isEdit.value = true; form.value = { ...c }; showModal.value = true }
+async function openEdit(c) { 
+  isEdit.value = true; 
+  // Get existing subject IDs
+  const subjectIds = c.class_subjects?.map(cs => cs.subject_id) || []
+  form.value = { ...c, subjects: subjectIds }
+  showModal.value = true 
+}
 
 async function save() {
   if (!form.value.class_name.trim()) { showToast('Class name is required', 'error'); return }
   saving.value = true
-  const { id, teachers: _t, academic_years: _y, ...payload } = form.value
-  const { error } = isEdit.value
-    ? await supabase.from('classes').update(payload).eq('id', id)
-    : await supabase.from('classes').insert(payload)
-  saving.value = false
-  if (error) { showToast(error.message, 'error'); return }
-  showToast(isEdit.value ? 'Class updated!' : 'Class added!', 'success')
-  showModal.value = false
-  loadClasses()
+  
+  const { id, teachers: _t, academic_years: _y, class_subjects: _cs, subjects: selectedSubjects, ...payload } = form.value
+  
+  try {
+    // 1. Save/Update Class
+    const { data: classResult, error: classError } = isEdit.value
+      ? await supabase.from('classes').update(payload).eq('id', id).select().single()
+      : await supabase.from('classes').insert(payload).select().single()
+
+    if (classError) throw classError
+
+    const classId = classResult.id
+
+    // 2. Sync Subjects
+    if (isEdit.value) {
+      // Delete old associations
+      await supabase.from('class_subjects').delete().eq('class_id', classId)
+    }
+
+    if (selectedSubjects.length > 0) {
+      const junctionData = selectedSubjects.map(sid => ({
+        class_id: classId,
+        subject_id: sid
+      }))
+      const { error: syncError } = await supabase.from('class_subjects').insert(junctionData)
+      if (syncError) throw syncError
+    }
+
+    showToast(isEdit.value ? 'Class updated!' : 'Class added!', 'success')
+    showModal.value = false
+    loadClasses()
+  } catch (error) {
+    showToast(error.message, 'error')
+  } finally {
+    saving.value = false
+  }
 }
 
 async function doDelete() {
@@ -104,12 +149,19 @@ function showToast(msg, type = 'success') {
       </div>
       <div v-else class="table-wrapper">
         <table>
-          <thead><tr><th>Class Name</th><th>Teacher</th><th>Academic Year</th><th>Turn</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Class Name</th><th>Teacher</th><th>Subjects</th><th>Turn</th><th>Actions</th></tr></thead>
           <tbody>
             <tr v-for="c in filtered" :key="c.id">
               <td style="font-weight:600;">{{ c.class_name }}</td>
               <td>{{ c.teachers?.full_name || '—' }}</td>
-              <td>{{ c.academic_years?.year_name || '—' }}</td>
+              <td>
+                <div class="subject-tags">
+                  <span v-for="cs in c.class_subjects" :key="cs.subject_id" class="badge badge-gray" style="font-size:10px;">
+                    {{ cs.subjects?.subject_name }}
+                  </span>
+                  <span v-if="!c.class_subjects?.length" class="text-secondary" style="font-size:11px;">No subjects</span>
+                </div>
+              </td>
               <td>
                 <span class="badge" :class="c.turn === 'morning' ? 'badge-blue' : 'badge-yellow'">
                   {{ c.turn === 'morning' ? '🌅 Morning' : '🌇 Afternoon' }}
@@ -156,6 +208,16 @@ function showToast(msg, type = 'success') {
               <option value="afternoon">🌇 Afternoon</option>
             </select>
           </div>
+
+          <div class="form-group">
+            <label class="form-label">Assigned Subjects</label>
+            <div class="subject-selection-grid">
+              <label v-for="s in allSubjects" :key="s.id" class="subject-checkbox">
+                <input type="checkbox" :value="s.id" v-model="form.subjects" />
+                <span>{{ s.subject_name }}</span>
+              </label>
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" @click="showModal = false">Cancel</button>
@@ -179,3 +241,42 @@ function showToast(msg, type = 'success') {
     </div>
   </div>
 </template>
+
+<style scoped>
+.subject-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.subject-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+}
+
+.subject-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.subject-checkbox:hover {
+  background: var(--bg-hover);
+}
+
+.subject-checkbox input {
+  width: 16px;
+  height: 16px;
+}
+</style>

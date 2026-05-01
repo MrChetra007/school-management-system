@@ -46,9 +46,12 @@ async function loadData() {
   if (classData) {
     classInfo.value = classData
     
-    // 1. Get All Subjects
-    const { data: subData } = await supabase.from('subjects').select('*').order('subject_name')
-    subjects.value = subData || []
+    // 1. Get Subjects assigned to this class
+    const { data: subData } = await supabase
+      .from('class_subjects')
+      .select('subjects(*)')
+      .eq('class_id', classData.id)
+    subjects.value = subData?.map(s => s.subjects) || []
 
     // 2. Get All Students
     const { data: stuData } = await supabase

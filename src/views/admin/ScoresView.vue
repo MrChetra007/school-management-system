@@ -54,13 +54,19 @@ async function fetchClasses() {
 }
 
 async function fetchSubjects() {
-  const { data } = await supabase.from('subjects').select('*').order('subject_name')
-  subjects.value = data || []
+  if (!selectedClassId.value) return
+  const { data } = await supabase
+    .from('class_subjects')
+    .select('subjects(*)')
+    .eq('class_id', selectedClassId.value)
+  subjects.value = data?.map(s => s.subjects) || []
 }
 
 async function fetchData() {
   if (!selectedClassId.value) return
   loading.value = true
+  
+  await fetchSubjects()
 
   // 1. Fetch Students
   const { data: stuData } = await supabase
