@@ -197,12 +197,12 @@ function isActive(path) {
 .sidebar-user-name {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.sidebar-user-role { font-size: 11px; color: var(--text-on-dark-muted); }
+.sidebar-user-role { font-size: 11px; color: var(--text-secondary); }
 
 .logout-btn {
   width: 100%;

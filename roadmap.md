@@ -157,15 +157,15 @@ Step 3 — Final semester average:
 - [x] Write `schema.sql` (all tables + enums)
 - [x] Write RLS policies per role
 - [x] Setup Supabase storage bucket `teacher-profiles`
-- [ ] Run schema on Supabase project
-- [ ] Seed test data (1 academic year, 2 classes, 5 students, 3 teachers)
+- [x] Run schema on Supabase project
+- [x] Seed test data (1 academic year, 2 classes, 5 students, 3 teachers)
 
 ---
 
-### 🔧 Phase 1 — Project Setup
-- [ ] Init Vite + Vue 3 project
-- [ ] Install & configure Tailwind CSS
-- [ ] Install dependencies:
+### ✅ Phase 1 — Project Setup
+- [x] Init Vite + Vue 3 project
+- [x] Install & configure Tailwind CSS
+- [x] Install dependencies:
   - `@supabase/supabase-js`
   - `pinia` (state management)
   - `vue-router`
@@ -173,122 +173,122 @@ Step 3 — Final semester average:
   - `@vueuse/core` (utilities)
   - `chart.js` + `vue-chartjs` (for growth charts)
   - `jspdf` + `html2canvas` (for print/export)
-- [ ] Setup Supabase client (`src/lib/supabase.js`)
-- [ ] Setup `.env` file (Supabase URL + anon key)
-- [ ] Setup folder structure as above
+- [x] Setup Supabase client (`src/lib/supabase.js`)
+- [x] Setup `.env` file (Supabase URL + anon key)
+- [x] Setup folder structure as above
 
 ---
 
-### 🔐 Phase 2 — Auth & Role Routing
-- [ ] Login page (email + password via Supabase Auth)
-- [ ] Pinia auth store (session, user, role)
-- [ ] Route guards (redirect based on role)
-- [ ] Layouts per role (AdminLayout, TeacherLayout, LibrarianLayout)
-- [ ] Unauthorized page
-- [ ] Auto redirect after login based on role
-- [ ] Logout functionality
+### ✅ Phase 2 — Auth & Role Routing
+- [x] Login page (email + password via Supabase Auth)
+- [x] Pinia auth store (session, user, role)
+- [x] Route guards (redirect based on role)
+- [x] Layouts per role (AdminLayout, TeacherLayout, LibrarianLayout)
+- [x] Unauthorized page
+- [x] Auto redirect after login based on role
+- [x] Logout functionality
 
 ---
 
-### 🏫 Phase 3 — Admin Features
+### ✅ Phase 3 — Admin Features
 
 #### 3.1 Core Setup
-- [ ] School information page (edit + logo upload)
-- [ ] Academic year CRUD
-- [ ] Subject CRUD
-- [ ] School holidays CRUD
+- [x] School information page (edit + logo upload)
+- [x] Academic year CRUD
+- [x] Subject CRUD
+- [x] School holidays CRUD
 
 #### 3.2 People Management
-- [ ] Teacher CRUD + profile picture (Supabase bucket)
-- [ ] Class CRUD (assign teacher, morning/afternoon turn)
-- [ ] Student CRUD (all classes)
-- [ ] Student detail page (health, growth, vaccinations)
+- [x] Teacher CRUD + profile picture (Supabase bucket)
+- [x] Class CRUD (assign teacher, morning/afternoon turn)
+- [x] Student CRUD (all classes)
+- [x] Student detail page (health, growth, vaccinations)
 
 #### 3.3 Attendance
-- [ ] Student attendance — view all, filter by class/date
-- [ ] Teacher attendance — view & manage all
+- [x] Student attendance — view all, filter by class/date
+- [x] Teacher attendance — view & manage all
 
 #### 3.4 Scores
-- [ ] View all scores (filter by class, subject, type)
-- [ ] Monthly score view & summary
-- [ ] Semester score view with calculated averages
+- [x] View all scores (filter by class, subject, type)
+- [x] Monthly score view & summary
+- [x] Semester score view with calculated averages
 
 #### 3.5 Finance & Inventory
-- [ ] Budget transactions CRUD (income/expense)
-- [ ] Inventory items CRUD (with low stock alert)
+- [x] Budget transactions CRUD (income/expense)
+- [x] Inventory items CRUD (with low stock alert)
 
 #### 3.6 Library Overview
-- [ ] Read-only view of books & borrows
+- [x] Read-only view of books & borrows
 
 #### 3.7 Reports
-- [ ] Print student attendance report (by class/month)
-- [ ] Print score report (by class/semester)
-- [ ] Print budget report
+- [x] Print student attendance report (by class/month)
+- [x] Print score report (by class/semester)
+- [x] Print budget report
 
 ---
 
-### 👩‍🏫 Phase 4 — Teacher Features
+### ✅ Phase 4 — Teacher Features
 
 #### 4.1 Class & Students
-- [ ] Dashboard (class stats, today's attendance summary)
-- [ ] Class student list (add, edit students in own class)
-- [ ] Student detail (health, growth, vaccinations, sick days)
+- [x] Dashboard (class stats, today's attendance summary)
+- [x] Class student list (add, edit students in own class)
+- [x] Student detail (health, growth, vaccinations, sick days)
 
 #### 4.2 Attendance
-- [ ] Daily attendance marking (present/absent/late/permission)
-- [ ] Monthly attendance view (calendar or table)
-- [ ] Own attendance view (read only)
+- [x] Daily attendance marking (present/absent/late/permission)
+- [x] Monthly attendance view (calendar or table)
+- [x] Own attendance view (read only)
 
 #### 4.3 Score Management
-- [ ] Select score type (Monthly or Semester)
-- [ ] Monthly: enter subject scores per student → auto calculate monthly_average
-- [ ] Semester: enter semester exam scores → system shows semester_average
-- [ ] View score history per student
+- [x] Select score type (Monthly or Semester)
+- [x] Monthly: enter subject scores per student → auto calculate monthly_average
+- [x] Semester: enter semester exam scores → system shows semester_average
+- [x] View score history per student
 
 #### 4.4 Health & Wellness
-- [ ] Add & manage student sick days
-- [ ] Add & view student growth records
-- [ ] View student vaccinations
+- [x] Add & manage student sick days
+- [x] Add & view student growth records
+- [x] View student vaccinations
 
 #### 4.5 Reports
-- [ ] Print class attendance sheet
-- [ ] Print class score report
+- [x] Print class attendance sheet
+- [x] Print class score report
 
 ---
 
-### 📚 Phase 5 — Librarian Features
-- [ ] Dashboard (total books, borrowed, overdue count)
-- [ ] Book CRUD (title, author, ISBN, category, copies)
-- [ ] Issue book (search student, set due date)
-- [ ] Return book (update status, available_copies)
-- [ ] Overdue list with days overdue
+### ✅ Phase 5 — Librarian Features
+- [x] Dashboard (total books, borrowed, overdue count)
+- [x] Book CRUD (title, author, ISBN, category, copies)
+- [x] Issue book (search student, set due date)
+- [x] Return book (update status, available_copies)
+- [x] Overdue list with days overdue
 
 ---
 
-### 👨‍👩‍👧 Phase 6 — Parent Portal
-- [ ] Search page (student name + DOB form)
-- [ ] Student found → show overview dashboard
-- [ ] Attendance tab (monthly calendar view)
-- [ ] Scores tab (monthly & semester per subject)
-- [ ] Health tab (health profile + checkups)
-- [ ] Growth tab (height/weight chart over time)
-- [ ] Vaccinations tab
-- [ ] Sick days tab
-- [ ] Mobile responsive (parents likely on phone)
-- [ ] Khmer language support on parent portal
+### ✅ Phase 6 — Parent Portal
+- [x] Search page (student name + DOB form)
+- [x] Student found → show overview dashboard
+- [x] Attendance tab (monthly calendar view)
+- [x] Scores tab (monthly & semester per subject)
+- [x] Health tab (health profile + checkups)
+- [x] Growth tab (height/weight chart over time)
+- [x] Vaccinations tab
+- [x] Sick days tab
+- [x] Mobile responsive (parents likely on phone)
+- [x] Khmer language support on parent portal
 
 ---
 
 ### 🎨 Phase 7 — Polish & Deployment
-- [ ] Loading states & skeleton loaders
-- [ ] Empty states (no data illustrations)
-- [ ] Toast notifications (success/error)
-- [ ] Confirm dialogs (delete actions)
-- [ ] Form validation on all forms
-- [ ] Responsive design (mobile/tablet)
-- [ ] Khmer font support (Hanuman or Noto Sans Khmer)
+- [x] Loading states & skeleton loaders
+- [x] Empty states (no data illustrations)
+- [x] Toast notifications (success/error)
+- [x] Confirm dialogs (delete actions)
+- [x] Form validation on all forms
+- [x] Responsive design (mobile/tablet)
+- [x] Khmer font support (Hanuman or Noto Sans Khmer)
 - [ ] Dark/light mode (optional)
-- [ ] Final testing per role
+- [x] Final testing per role
 - [ ] Deploy to Vercel / Netlify
 - [ ] Connect custom domain (if any)
 

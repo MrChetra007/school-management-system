@@ -73,8 +73,8 @@ function isActive(path) { return route.path.startsWith(path) }
 <style scoped>
 .sidebar-user { display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;margin-bottom:4px; }
 .sidebar-user-info { overflow:hidden; }
-.sidebar-user-name { font-size:13px;font-weight:600;color:var(--text-on-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-.sidebar-user-role { font-size:11px;color:var(--text-on-dark-muted); }
+.sidebar-user-name { font-size:13px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.sidebar-user-role { font-size:11px;color:var(--text-secondary); }
 .logout-btn { width:100%;color:#ef4444 !important; }
 .logout-btn:hover { background:rgba(239,68,68,0.1) !important; }
 </style>

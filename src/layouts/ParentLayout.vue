@@ -44,47 +44,50 @@ const route = useRoute()
 }
 
 .parent-header {
-  height: 60px;
-  background: white;
-  border-bottom: 1px solid var(--border-default);
+  height: auto;
+  padding: 32px 24px;
+  background: transparent;
+  border-bottom: none;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 0 24px;
-  gap: 16px;
-  box-shadow: var(--shadow-sm);
+  justify-content: center;
+  gap: 12px;
+  box-shadow: none;
 }
 
 .parent-brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   text-decoration: none;
 }
 
 .parent-logo {
-  width: 34px;
-  height: 34px;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  border-radius: 9px;
+  width: 48px;
+  height: 48px;
+  background: var(--primary-500);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .parent-brand-name {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
-.parent-header-right { margin-left: auto; }
+.parent-header-right { display: none; }
 
 .parent-content {
   flex: 1;
-  max-width: 900px;
+  max-width: 480px;
   width: 100%;
   margin: 0 auto;
-  padding: 32px 20px;
+  padding: 0 20px 40px;
 }
 
 .parent-footer {

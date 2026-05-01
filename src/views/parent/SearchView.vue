@@ -40,24 +40,24 @@ async function search() {
   <div style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
     <div class="card" style="width: 100%; max-width: 450px; padding: 32px; box-shadow: var(--shadow-xl);">
       <div style="text-align: center; margin-bottom: 32px;">
-        <div style="font-size: 48px; margin-bottom: 16px;">🎓</div>
-        <h1 style="font-size: 24px; font-weight: 800; color: var(--primary-color);">Parent Portal</h1>
-        <p style="color: var(--text-secondary); margin-top: 8px;">Enter student details to view records</p>
+        <div style="width: 64px; height: 64px; background: var(--primary-50); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px;">🎓</div>
+        <h1 style="font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em;">មើលព័ត៌មានកូន</h1>
+        <p style="color: var(--text-secondary); margin-top: 8px; font-size: 13px;">បញ្ចូលឈ្មោះ និងថ្ងៃខែឆ្នាំកំណើត</p>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 20px;">
         <div class="form-group">
-          <label class="form-label">Student ID or Full Name</label>
+          <label class="form-label">អត្តសញ្ញាណប័ណ្ណ ឬឈ្មោះពេញ</label>
           <input 
             class="form-input" 
             v-model="studentIdOrName" 
-            placeholder="e.g. S-001 or Sok Dara" 
+            placeholder="ឧទាហរណ៍៖ S-001 ឬ សុខ ចន្ថា" 
             @keyup.enter="search"
           />
         </div>
 
         <div class="form-group">
-          <label class="form-label">Date of Birth</label>
+          <label class="form-label">ថ្ងៃខែឆ្នាំកំណើត</label>
           <input 
             class="form-input" 
             type="date" 
@@ -66,12 +66,12 @@ async function search() {
           />
         </div>
 
-        <div v-if="errorMsg" style="background: #fef2f2; color: #ef4444; padding: 12px; border-radius: 8px; font-size: 13px; text-align: center;">
+        <div v-if="errorMsg" class="badge badge-red" style="padding: 12px; border-radius: 8px; font-size: 13px; text-align: center; display: block;">
           ⚠️ {{ errorMsg }}
         </div>
 
-        <button class="btn btn-primary w-full" style="height: 48px; font-size: 16px;" @click="search" :disabled="loading">
-          {{ loading ? 'Searching…' : '🔍 Find Student' }}
+        <button class="btn btn-primary w-full" style="height: 44px; font-size: 15px; font-weight: 700;" @click="search" :disabled="loading">
+          {{ loading ? 'កំពុងស្វែងរក...' : '🔍 ស្វែងរកសិស្ស' }}
         </button>
       </div>
 

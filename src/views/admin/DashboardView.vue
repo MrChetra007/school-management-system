@@ -65,9 +65,9 @@ function fmtDate(d) {
     </div>
 
     <!-- Stats -->
-    <div class="grid-cols-4" style="margin-bottom:20px;">
+    <div class="grid-cols-4" style="margin-bottom:24px;">
       <div class="stat-card">
-        <div class="stat-icon" style="background:#dbeafe;">👨‍🎓</div>
+        <div class="stat-icon" style="background:var(--primary-100);">👨‍🎓</div>
         <div class="stat-info">
           <div class="stat-label">Total Students</div>
           <div class="stat-value">{{ loading ? '—' : fmt(stats.students) }}</div>
@@ -75,7 +75,7 @@ function fmtDate(d) {
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#d1fae5;">👩‍🏫</div>
+        <div class="stat-icon" style="background:var(--bg-success);">👩‍🏫</div>
         <div class="stat-info">
           <div class="stat-label">Teachers</div>
           <div class="stat-value">{{ loading ? '—' : fmt(stats.teachers) }}</div>
@@ -83,7 +83,7 @@ function fmtDate(d) {
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#ede9fe;">🏫</div>
+        <div class="stat-icon" style="background:var(--bg-purple);">🏫</div>
         <div class="stat-info">
           <div class="stat-label">Classes</div>
           <div class="stat-value">{{ loading ? '—' : fmt(stats.classes) }}</div>
@@ -91,7 +91,7 @@ function fmtDate(d) {
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#fef3c7;">📚</div>
+        <div class="stat-icon" style="background:var(--bg-warning);">📚</div>
         <div class="stat-info">
           <div class="stat-label">Library Books</div>
           <div class="stat-value">{{ loading ? '—' : fmt(stats.books) }}</div>
@@ -101,20 +101,20 @@ function fmtDate(d) {
     </div>
 
     <!-- Budget row -->
-    <div class="grid-cols-2" style="margin-bottom:20px;">
+    <div class="grid-cols-2" style="margin-bottom:24px;">
       <div class="stat-card">
-        <div class="stat-icon" style="background:#d1fae5;">💰</div>
+        <div class="stat-icon" style="background:var(--bg-success);">💰</div>
         <div class="stat-info">
           <div class="stat-label">Total Income</div>
-          <div class="stat-value" style="color:#059669;">${{ loading ? '—' : fmt(stats.budget_income) }}</div>
+          <div class="stat-value" style="color:var(--color-success);">${{ loading ? '—' : fmt(stats.budget_income) }}</div>
           <div class="stat-sub">Budget transactions</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#fee2e2;">💸</div>
+        <div class="stat-icon" style="background:var(--bg-danger);">💸</div>
         <div class="stat-info">
           <div class="stat-label">Total Expenses</div>
-          <div class="stat-value" style="color:#dc2626;">${{ loading ? '—' : fmt(stats.budget_expense) }}</div>
+          <div class="stat-value" style="color:var(--color-danger);">${{ loading ? '—' : fmt(stats.budget_expense) }}</div>
           <div class="stat-sub">Budget transactions</div>
         </div>
       </div>
