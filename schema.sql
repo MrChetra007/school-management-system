@@ -1061,3 +1061,5 @@ create trigger on_auth_user_created
 -- ============================================================
 -- DONE — Now go run seed_accounts.sql
 -- ============================================================
+ALTER TABLE scores ADD COLUMN month INTEGER;
+ALTER TABLE scores ADD COLUMN semester_number INTEGER;
