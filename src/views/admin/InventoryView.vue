@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { formatDate, toInputDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon, ExclamationTriangleIcon, TrashIcon, CubeIcon } from '@heroicons/vue/24/outline'
 
 const items = ref([])
 const loading = ref(true)
@@ -83,13 +84,13 @@ function stockStatus(item) {
 <template>
   <div>
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <div class="page-header">
       <div>
         <h1 class="page-title">Inventory</h1>
-        <p class="page-subtitle">{{ items.length }} items tracked<span v-if="lowStockCount > 0" style="color:#f59e0b;margin-left:8px;">⚠️ {{ lowStockCount }} low stock</span></p>
+        <p class="page-subtitle">{{ items.length }} items tracked<span v-if="lowStockCount > 0" style="color:#f59e0b;margin-left:8px;"><ExclamationTriangleIcon class="w-4 h-4 inline" /> {{ lowStockCount }} low stock</span></p>
       </div>
       <button class="btn btn-primary" @click="openAdd">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -99,7 +100,7 @@ function stockStatus(item) {
 
     <!-- Alert banner for low stock -->
     <div v-if="lowStockCount > 0" style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;color:#92400e;">
-      ⚠️ <strong>{{ lowStockCount }} item(s)</strong> are at or below minimum stock level and need restocking.
+      <ExclamationTriangleIcon class="w-4 h-4" /> <strong>{{ lowStockCount }} item(s)</strong> are at or below minimum stock level and need restocking.
     </div>
 
     <div class="filters-bar">
@@ -118,7 +119,7 @@ function stockStatus(item) {
         <div v-for="i in 5" :key="i" class="skeleton" style="height:48px;margin-bottom:10px;border-radius:8px;"></div>
       </div>
       <div v-else-if="filtered.length === 0" class="empty-state">
-        <div class="empty-state-icon">📦</div>
+        <div class="empty-state-icon"><CubeIcon class="w-12 h-12 text-gray-400" /></div>
         <p class="empty-state-title">No items found</p>
         <button class="btn btn-primary" @click="openAdd">Add Item</button>
       </div>
@@ -206,7 +207,7 @@ function stockStatus(item) {
     <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
       <div class="modal" style="max-width:360px;">
         <div class="modal-body" style="text-align:center;padding:28px 24px;">
-          <div style="font-size:40px;margin-bottom:12px;">🗑️</div>
+          <div><TrashIcon class="w-10 h-10 text-red-500" /></div>
           <h3 style="margin-bottom:8px;">Delete Item?</h3>
           <p style="color:var(--text-secondary);font-size:13px;">Delete <strong>{{ deleteTarget.name }}</strong>?</p>
         </div>

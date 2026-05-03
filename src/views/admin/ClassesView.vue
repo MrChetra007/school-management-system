@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAcademicYearStore } from '@/stores/academicYear'
 import { formatDate, toInputDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon, BuildingOfficeIcon, SunIcon, MoonIcon, TrashIcon } from '@heroicons/vue/24/outline'
 
 const yearStore = useAcademicYearStore()
 const classes = ref([])
@@ -121,7 +122,7 @@ function showToast(msg, type = 'success') {
 <template>
   <div>
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
     <div class="page-header">
       <div><h1 class="page-title">Classes</h1><p class="page-subtitle">{{ classes.length }} active classes</p></div>
@@ -143,7 +144,7 @@ function showToast(msg, type = 'success') {
         <div v-for="i in 5" :key="i" class="skeleton" style="height:44px;margin-bottom:10px;border-radius:8px;"></div>
       </div>
       <div v-else-if="filtered.length === 0" class="empty-state">
-        <div class="empty-state-icon">🏫</div>
+        <BuildingOfficeIcon class="w-12 h-12 text-gray-400" />
         <p class="empty-state-title">No classes yet</p>
         <button class="btn btn-primary" @click="openAdd">Add Class</button>
       </div>
@@ -164,7 +165,7 @@ function showToast(msg, type = 'success') {
               </td>
               <td>
                 <span class="badge" :class="c.turn === 'morning' ? 'badge-blue' : 'badge-yellow'">
-                  {{ c.turn === 'morning' ? '🌅 Morning' : '🌇 Afternoon' }}
+                  <SunIcon v-if="c.turn === 'morning'" class="w-4 h-4" /><MoonIcon v-else class="w-4 h-4" /> {{ c.turn === 'morning' ? 'Morning' : 'Afternoon' }}
                 </span>
               </td>
               <td>
@@ -204,8 +205,8 @@ function showToast(msg, type = 'success') {
           <div class="form-group">
             <label class="form-label">Turn</label>
             <select class="form-select" v-model="form.turn">
-              <option value="morning">🌅 Morning</option>
-              <option value="afternoon">🌇 Afternoon</option>
+              <option value="morning">Morning</option>
+              <option value="afternoon">Afternoon</option>
             </select>
           </div>
 
@@ -229,7 +230,7 @@ function showToast(msg, type = 'success') {
     <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
       <div class="modal" style="max-width:360px;">
         <div class="modal-body" style="text-align:center;padding:28px 24px;">
-          <div style="font-size:40px;margin-bottom:12px;">🗑️</div>
+          <TrashIcon class="w-10 h-10 text-gray-400" style="margin: 0 auto 12px;" />
           <h3 style="margin-bottom:8px;">Delete Class?</h3>
           <p style="color:var(--text-secondary);font-size:13px;">Delete <strong>{{ deleteTarget.class_name }}</strong>?</p>
         </div>

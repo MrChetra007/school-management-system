@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { formatDate, toInputDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon, FaceFrownIcon, TrashIcon } from '@heroicons/vue/24/outline'
 
 const sickDays = ref([])
 const students = ref([])
@@ -110,7 +111,7 @@ function showToast(msg, type = 'success') {
 <template>
   <div>
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <div class="page-header">
@@ -140,7 +141,7 @@ function showToast(msg, type = 'success') {
         <div v-for="i in 5" :key="i" class="skeleton" style="height:48px;margin-bottom:10px;border-radius:8px;"></div>
       </div>
       <div v-else-if="filtered.length === 0" class="empty-state">
-        <div class="empty-state-icon">🤒</div>
+        <div class="empty-state-icon"><FaceFrownIcon class="w-12 h-12 text-gray-400" /></div>
         <p class="empty-state-title">No sick day records found</p>
         <button class="btn btn-primary" @click="openAdd">Add Sick Day</button>
       </div>
@@ -220,7 +221,7 @@ function showToast(msg, type = 'success') {
     <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
       <div class="modal" style="max-width:360px;">
         <div class="modal-body" style="text-align:center;padding:28px 24px;">
-          <div style="font-size:40px;margin-bottom:12px;">🗑️</div>
+          <div><TrashIcon class="w-10 h-10 text-red-500" /></div>
           <h3 style="margin-bottom:8px;">Delete Record?</h3>
           <p style="color:var(--text-secondary);font-size:13px;">Delete this sick day record for <strong>{{ deleteTarget.students?.full_name }}</strong>?</p>
         </div>

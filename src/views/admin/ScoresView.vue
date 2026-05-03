@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAcademicYearStore } from '@/stores/academicYear'
 import { computeMonthlyAverage, computeSemesterAverage, computeRank } from '@/utils/scoreCalculator'
 import { generateMonthlyScorePDF, generateSemesterScorePDF } from '@/utils/exportPdf'
+import { BuildingOfficeIcon, DocumentIcon } from '@heroicons/vue/24/outline'
 
 const yearStore = useAcademicYearStore()
 
@@ -238,12 +239,12 @@ watch([selectedClassId, scoreMode, selectedMonth, selectedSemester], fetchData)
     </div>
 
     <div v-else-if="!selectedClassId" class="empty-state">
-      <div class="empty-state-icon">🏫</div>
+      <BuildingOfficeIcon class="w-12 h-12 text-gray-400" />
       <p class="empty-state-title">Select a class to view scores</p>
     </div>
 
     <div v-else-if="scoreMatrix.length === 0" class="empty-state">
-      <div class="empty-state-icon">📄</div>
+      <DocumentIcon class="w-12 h-12 text-gray-400" />
       <p class="empty-state-title">No scores found for this period</p>
     </div>
 

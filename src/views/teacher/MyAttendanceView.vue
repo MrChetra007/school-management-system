@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
+import { ClipboardDocumentListIcon } from '@heroicons/vue/24/outline'
 
 const auth = useAuthStore()
 const attendance = ref([])
@@ -51,7 +52,7 @@ function statusBadge(status) {
 
     <div v-else class="card">
       <div v-if="attendance.length === 0" class="empty-state">
-        <div class="empty-state-icon">📋</div>
+        <ClipboardDocumentListIcon class="w-12 h-12 text-gray-400" />
         <p class="empty-state-title">No records found</p>
       </div>
       <div v-else class="table-wrapper">

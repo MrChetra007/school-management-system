@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAcademicYearStore } from '@/stores/academicYear'
 import { toInputDate, formatDate } from '@/utils/formatDate'
+import { BuildingOfficeIcon, CalendarIcon, BookOpenIcon, CalendarDaysIcon, ClockIcon, ArrowDownTrayIcon, CheckIcon, XCircleIcon, SunIcon, InformationCircleIcon } from '@heroicons/vue/24/outline'
 
 const yearStore = useAcademicYearStore()
 const currentTab = ref('school')
@@ -11,11 +12,11 @@ const saving = ref(false)
 const toast = ref(null)
 
 const tabs = [
-  { id: 'school', label: '🏫 School Info' },
-  { id: 'years', label: '📅 Academic Years' },
-  { id: 'subjects', label: '📚 Subjects' },
-  { id: 'holidays', label: '🗓️ Holidays' },
-  { id: 'attendance', label: '⏰ Attendance Config' },
+  { id: 'school', label: 'School Info' },
+  { id: 'years', label: 'Academic Years' },
+  { id: 'subjects', label: 'Subjects' },
+  { id: 'holidays', label: 'Holidays' },
+  { id: 'attendance', label: 'Attendance Config' },
 ]
 
 function showToast(msg, type = 'success') {
@@ -223,7 +224,7 @@ function switchTab(id) {
 <template>
   <div class="settings-page">
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <div class="page-header">
@@ -243,15 +244,15 @@ function switchTab(id) {
 
     <div class="tab-content" style="margin-top:20px;">
       
-      <!-- 🏫 Tab: School Information -->
+      <!-- School Information Tab -->
       <div v-if="currentTab === 'school'" class="tab-pane">
         <div class="card">
-          <div class="card-header"><span class="card-title">School Details</span><button class="btn btn-primary btn-sm" @click="saveSchool" :disabled="saving">{{ saving ? 'Saving...' : '💾 Save' }}</button></div>
+          <div class="card-header"><span class="card-title">School Details</span><button class="btn btn-primary btn-sm" @click="saveSchool" :disabled="saving"><ArrowDownTrayIcon class="w-4 h-4" /> {{ saving ? 'Saving...' : 'Save' }}</button></div>
           <div class="card-body" style="display:grid;grid-template-columns:200px 1fr;gap:24px;">
             <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
               <div class="logo-box">
                 <img v-if="schoolForm.logo_base64" :src="schoolForm.logo_base64" />
-                <span v-else style="font-size:40px;">🏫</span>
+                <BuildingOfficeIcon v-else class="w-10 h-10 text-gray-400" />
               </div>
               <label class="btn btn-ghost btn-sm">
                 {{ uploadingLogo ? '...' : 'Upload Logo' }}
@@ -271,7 +272,7 @@ function switchTab(id) {
         </div>
       </div>
 
-      <!-- 📅 Tab: Academic Years -->
+      <!-- Academic Years Tab -->
       <div v-if="currentTab === 'years'" class="tab-pane">
         <div class="card">
           <div class="card-header"><span class="card-title">Academic Years</span><button class="btn btn-primary btn-sm" @click="openAddYear">+ Add Year</button></div>
@@ -294,7 +295,7 @@ function switchTab(id) {
         </div>
       </div>
 
-      <!-- 📚 Tab: Subjects -->
+      <!-- Subjects Tab -->
       <div v-if="currentTab === 'subjects'" class="tab-pane">
         <div class="card">
           <div class="card-header"><span class="card-title">Subjects</span><button class="btn btn-primary btn-sm" @click="openAddSubject">+ Add Subject</button></div>
@@ -316,7 +317,7 @@ function switchTab(id) {
         </div>
       </div>
 
-      <!-- 🗓️ Tab: Holidays -->
+      <!-- Holidays Tab -->
       <div v-if="currentTab === 'holidays'" class="tab-pane">
         <div class="card">
           <div class="card-header"><span class="card-title">Holidays ({{ yearStore.selectedYearName }})</span><button class="btn btn-primary btn-sm" @click="openAddHoliday">+ Add Holiday</button></div>
@@ -325,7 +326,7 @@ function switchTab(id) {
               <thead><tr><th>Name</th><th>Start</th><th>End</th><th>Actions</th></tr></thead>
               <tbody>
                 <tr v-for="h in holidays" :key="h.id">
-                  <td><strong>🌴 {{ h.name }}</strong></td>
+                  <td><strong><SunIcon class="w-4 h-4 inline-block align-middle" /> {{ h.name }}</strong></td>
                   <td>{{ formatDate(h.start_date) }}</td>
                   <td>{{ formatDate(h.end_date) }}</td>
                   <td>
@@ -342,7 +343,7 @@ function switchTab(id) {
       <!-- ⏰ Tab: Attendance Config -->
       <div v-if="currentTab === 'attendance'" class="tab-pane">
         <div class="card" style="max-width:600px;">
-          <div class="card-header"><span class="card-title">Attendance Thresholds</span><button class="btn btn-primary btn-sm" @click="saveAttConfig" :disabled="saving">{{ saving ? 'Saving...' : '💾 Save' }}</button></div>
+          <div class="card-header"><span class="card-title">Attendance Thresholds</span><button class="btn btn-primary btn-sm" @click="saveAttConfig" :disabled="saving"><ArrowDownTrayIcon class="w-4 h-4" /> {{ saving ? 'Saving...' : 'Save' }}</button></div>
           <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
             <div class="form-group" style="grid-column:1/-1;margin-bottom:0;"><h4 style="color:var(--primary-color);">Morning Shift</h4></div>
             <div class="form-group"><label class="form-label">Shift Start</label><input type="time" class="form-input" v-model="attConfig.morning_start" /></div>
@@ -353,7 +354,7 @@ function switchTab(id) {
             <div class="form-group"><label class="form-label">Late Threshold</label><input type="time" class="form-input" v-model="attConfig.evening_late_threshold" /></div>
             
             <div style="grid-column:1/-1;background:var(--primary-50);padding:12px;border-radius:8px;font-size:12px;color:var(--primary-700);">
-              ℹ️ <strong>How it works:</strong> If a teacher checks in <em>after</em> the threshold time, they are automatically marked as <strong>Late</strong>. Otherwise, they are <strong>Present</strong>.
+              <InformationCircleIcon class="w-4 h-4 inline-block align-middle" /> <strong>How it works:</strong> If a teacher checks in <em>after</em> the threshold time, they are automatically marked as <strong>Late</strong>. Otherwise, they are <strong>Present</strong>.
             </div>
           </div>
         </div>

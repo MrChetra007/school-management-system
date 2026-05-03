@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
+import { CheckIcon, ExclamationCircleIcon, ClockIcon, DocumentTextIcon, SunIcon, MoonIcon, BuildingOfficeIcon, UserGroupIcon, CheckCircleIcon, CalendarIcon, PencilSquareIcon, ChartBarIcon, AcademicCapIcon } from '@heroicons/vue/24/outline'
 
 const auth = useAuthStore()
 const classInfo = ref(null)
@@ -115,10 +116,10 @@ const attendancePercent = computed(() => {
       <div style="display:flex; gap:10px; align-items:center;">
         <!-- Check-in Status -->
         <div v-if="myAttendanceToday" class="badge" :class="myAttendanceToday.status === 'present' ? 'badge-green' : 'badge-yellow'" style="padding:10px 16px; flex-direction:column; align-items:flex-start; gap:2px; height:auto;">
-          <div style="font-weight:700;">{{ myAttendanceToday.status === 'present' ? '✅ មានវត្តមាន' : '🟡 យឺត' }}</div>
+          <div style="font-weight:700;"><template v-if="myAttendanceToday.status === 'present'"><CheckIcon class="w-4 h-4" /> មានវត្តមាន</template><template v-else><ExclamationCircleIcon class="w-4 h-4" /> យឺត</template></div>
           <div style="font-size:11px; opacity:0.8;">
-            🕒 {{ new Date(myAttendanceToday.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
-            <span v-if="myAttendanceToday.note" title="Admin Note"> 📝</span>
+            <ClockIcon class="w-3 h-3" /> {{ new Date(myAttendanceToday.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
+            <span v-if="myAttendanceToday.note" title="Admin Note"> <DocumentTextIcon class="w-3 h-3" /></span>
           </div>
         </div>
         <!-- Check-in Button -->
@@ -127,7 +128,7 @@ const attendancePercent = computed(() => {
         </button>
 
         <div v-if="classInfo" class="badge badge-blue" style="padding:10px 16px;">
-          {{ classInfo.turn === 'morning' ? '🌅 វេនព្រឹក' : '🌇 វេនល្ងាច' }}
+          <template v-if="classInfo.turn === 'morning'"><SunIcon class="w-4 h-4" /> វេនព្រឹក</template><template v-else><MoonIcon class="w-4 h-4" /> វេនល្ងាច</template>
         </div>
       </div>
     </div>
@@ -142,7 +143,7 @@ const attendancePercent = computed(() => {
     </div>
 
     <div v-else-if="!classInfo" class="empty-state">
-      <div class="empty-state-icon">🏫</div>
+      <BuildingOfficeIcon class="w-12 h-12 text-gray-400" />
       <p class="empty-state-title">No Class Assigned</p>
       <p class="empty-state-desc">Please contact the administrator to assign you to a class.</p>
     </div>
@@ -151,14 +152,14 @@ const attendancePercent = computed(() => {
       <!-- Stats Grid -->
       <div class="grid-cols-3" style="margin-bottom:24px;">
         <div class="stat-card">
-          <div class="stat-icon" style="background:#e0f2fe;color:#0ea5e9;">👨‍🎓</div>
+          <div class="stat-icon" style="background:#e0f2fe;color:#0ea5e9;"><UserGroupIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">My Students</div>
             <div class="stat-value">{{ studentsCount }}</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:#f0fdf4;color:#22c55e;">✅</div>
+          <div class="stat-icon" style="background:#f0fdf4;color:#22c55e;"><CheckCircleIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">Attendance Today</div>
             <div class="stat-value">{{ attendancePercent }}%</div>
@@ -166,7 +167,7 @@ const attendancePercent = computed(() => {
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:#fff7ed;color:#f97316;">📅</div>
+          <div class="stat-icon" style="background:#fff7ed;color:#f97316;"><CalendarIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">Today</div>
             <div class="stat-value" style="font-size:18px;">{{ formatDate(new Date()) }}</div>
@@ -208,13 +209,13 @@ const attendancePercent = computed(() => {
           <div class="card-header"><span class="card-title">Quick Actions</span></div>
           <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
             <button class="btn btn-primary w-full" @click="$router.push('/teacher/attendance')">
-              📝 Mark Attendance
+              <PencilSquareIcon class="w-4 h-4" /> Mark Attendance
             </button>
             <button class="btn btn-secondary w-full" @click="$router.push('/teacher/scores')">
-              📊 Enter Scores
+              <ChartBarIcon class="w-4 h-4" /> Enter Scores
             </button>
             <button class="btn btn-ghost w-full" @click="$router.push('/teacher/students')">
-              👨‍🎓 View Students
+              <AcademicCapIcon class="w-4 h-4" /> View Students
             </button>
           </div>
         </div>

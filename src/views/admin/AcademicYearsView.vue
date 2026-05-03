@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useAcademicYearStore } from '@/stores/academicYear'
 import { toInputDate, formatDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon, BuildingOfficeIcon, CalendarIcon, TrashIcon } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -83,14 +84,14 @@ function showToast(msg, type = 'success') {
 <template>
   <div class="standalone-page">
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <!-- Standalone Header -->
     <header class="standalone-header">
       <div class="header-content">
         <div class="school-brand">
-          <div class="school-logo">🏫</div>
+          <div class="school-logo"><BuildingOfficeIcon class="w-6 h-6" /></div>
           <h1 class="school-name">{{ schoolInfo.name_khmer }}</h1>
         </div>
         <button class="btn btn-ghost logout-btn" @click="handleLogout">
@@ -116,7 +117,7 @@ function showToast(msg, type = 'success') {
         </div>
 
         <div v-else-if="years.length === 0" class="empty-state">
-          <div class="empty-state-icon">📅</div>
+          <CalendarIcon class="w-12 h-12 text-gray-400" />
           <p class="empty-state-title">មិនទាន់មានឆ្នាំសិក្សានៅឡើយទេ</p>
           <button class="btn btn-primary" @click="openAdd">បង្កើតឆ្នាំសិក្សាដំបូង</button>
         </div>
@@ -191,7 +192,7 @@ function showToast(msg, type = 'success') {
     <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
       <div class="modal" style="max-width:380px;">
         <div class="modal-body" style="text-align:center;padding:28px 24px;">
-          <div style="font-size:40px;margin-bottom:12px;">🗑️</div>
+          <TrashIcon class="w-10 h-10 text-gray-400" style="margin: 0 auto 12px;" />
           <h3 style="margin-bottom:8px;">លុបឆ្នាំសិក្សា?</h3>
           <p style="color:var(--text-secondary);font-size:13px;">តើអ្នកពិតជាចង់លុប <strong>{{ deleteTarget.year_name }}</strong> មែនទេ? រាល់ទិន្នន័យពាក់ព័ន្ធទាំងអស់នឹងត្រូវប៉ះពាល់។</p>
         </div>

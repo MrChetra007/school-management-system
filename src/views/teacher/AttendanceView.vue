@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon, ArrowDownTrayIcon, BuildingOfficeIcon, AcademicCapIcon } from '@heroicons/vue/24/outline'
 
 const auth = useAuthStore()
 const students = ref([])
@@ -129,7 +130,7 @@ function markAllPresent() {
 <template>
   <div>
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <div class="page-header">
@@ -138,7 +139,7 @@ function markAllPresent() {
         <p class="page-subtitle" v-if="classInfo">Marking for Class: <strong>{{ classInfo.class_name }}</strong></p>
       </div>
       <button v-if="classInfo" class="btn btn-primary" @click="save" :disabled="saving">
-        {{ saving ? 'Saving…' : '💾 Save Attendance' }}
+        <ArrowDownTrayIcon class="w-4 h-4" /> {{ saving ? 'Saving…' : 'Save Attendance' }}
       </button>
     </div>
 
@@ -147,7 +148,7 @@ function markAllPresent() {
     </div>
 
     <div v-else-if="!classInfo" class="empty-state">
-      <div class="empty-state-icon">🏫</div>
+      <div class="empty-state-icon"><BuildingOfficeIcon class="w-12 h-12 text-gray-400" /></div>
       <p class="empty-state-title">No Class Assigned</p>
     </div>
 
@@ -159,7 +160,7 @@ function markAllPresent() {
             <input class="form-input" type="date" v-model="selectedDate" @change="loadAttendance" />
           </div>
           <button class="btn btn-ghost" @click="markAllPresent" :disabled="bulkEntries.length === 0" style="margin-top:14px; color:var(--primary-color);">
-            ✅ គូសទាំងអស់ថាមានវត្តមាន
+            <CheckIcon class="w-4 h-4" /> គូសទាំងអស់ថាមានវត្តមាន
           </button>
           <div style="display:flex;gap:8px;flex:1;justify-content:flex-end;">
             <span class="badge badge-green">មក: {{ summary.present }}</span>
@@ -172,7 +173,7 @@ function markAllPresent() {
 
       <div class="card">
         <div v-if="bulkEntries.length === 0" class="empty-state">
-          <div class="empty-state-icon">🎓</div>
+          <div class="empty-state-icon"><AcademicCapIcon class="w-12 h-12 text-gray-400" /></div>
           <p class="empty-state-title">No students found</p>
         </div>
         <div v-else class="table-wrapper">
@@ -218,7 +219,7 @@ function markAllPresent() {
         </div>
         <div v-if="bulkEntries.length > 0" class="card-footer" style="display:flex;justify-content:flex-end;">
           <button class="btn btn-primary" @click="save" :disabled="saving">
-            {{ saving ? 'Saving…' : '💾 Save Attendance' }}
+        <ArrowDownTrayIcon class="w-4 h-4" /> {{ saving ? 'Saving…' : 'Save Attendance' }}
           </button>
         </div>
       </div>

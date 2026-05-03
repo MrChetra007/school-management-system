@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAcademicYearStore } from '@/stores/academicYear'
 import { formatDate, toInputDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon, BanknotesIcon, ArrowTrendingUpIcon, ArrowTrendingDownIcon, ScaleIcon, CreditCardIcon, TrashIcon } from '@heroicons/vue/24/outline'
 
 const yearStore = useAcademicYearStore()
 const transactions = ref([])
@@ -69,7 +70,7 @@ function fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigi
 <template>
   <div>
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
     <div class="page-header">
       <div><h1 class="page-title">Budget</h1><p class="page-subtitle">Income and expense tracking</p></div>
@@ -82,21 +83,21 @@ function fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigi
     <!-- Summary cards -->
     <div class="grid-cols-3" style="margin-bottom:20px;">
       <div class="stat-card">
-        <div class="stat-icon" style="background:#d1fae5;">💰</div>
+        <div class="stat-icon" style="background:#d1fae5;"><BanknotesIcon class="w-6 h-6" /></div>
         <div class="stat-info">
           <div class="stat-label">Total Income</div>
           <div class="stat-value" style="color:#059669;font-size:20px;">${{ fmt(totalIncome) }}</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:#fee2e2;">💸</div>
+        <div class="stat-icon" style="background:#fee2e2;"><ArrowTrendingUpIcon class="w-6 h-6" /></div>
         <div class="stat-info">
           <div class="stat-label">Total Expenses</div>
           <div class="stat-value" style="color:#dc2626;font-size:20px;">${{ fmt(totalExpense) }}</div>
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" :style="`background:${balance >= 0 ? '#dbeafe' : '#fee2e2'}`">⚖️</div>
+        <div class="stat-icon" :style="`background:${balance >= 0 ? '#dbeafe' : '#fee2e2'}`"><ScaleIcon class="w-6 h-6" /></div>
         <div class="stat-info">
           <div class="stat-label">Balance</div>
           <div class="stat-value" :style="`color:${balance >= 0 ? '#1d4ed8' : '#dc2626'};font-size:20px;`">${{ fmt(balance) }}</div>
@@ -118,7 +119,7 @@ function fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigi
         <div v-for="i in 5" :key="i" class="skeleton" style="height:44px;margin-bottom:10px;border-radius:8px;"></div>
       </div>
       <div v-else-if="filtered.length === 0" class="empty-state">
-        <div class="empty-state-icon">💳</div>
+        <CreditCardIcon class="w-12 h-12 text-gray-400" />
         <p class="empty-state-title">No transactions found</p>
         <button class="btn btn-primary" @click="openAdd">Add Transaction</button>
       </div>
@@ -128,7 +129,7 @@ function fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigi
           <tbody>
             <tr v-for="t in filtered" :key="t.id">
               <td>{{ formatDate(t.date) }}</td>
-              <td><span class="badge" :class="t.type === 'income' ? 'badge-green' : 'badge-red'">{{ t.type === 'income' ? '📈 Income' : '📉 Expense' }}</span></td>
+              <td><span class="badge" :class="t.type === 'income' ? 'badge-green' : 'badge-red'"><template v-if="t.type === 'income'"><ArrowTrendingUpIcon class="w-3 h-3 inline-block align-middle" /> Income</template><template v-else><ArrowTrendingDownIcon class="w-3 h-3 inline-block align-middle" /> Expense</template></span></td>
               <td style="font-size:13px;">{{ t.description || '—' }}</td>
               <td><span v-if="t.category" class="badge badge-gray">{{ t.category }}</span><span v-else>—</span></td>
               <td style="font-weight:700;" :style="`color:${t.type === 'income' ? '#059669' : '#dc2626'}`">
@@ -196,7 +197,7 @@ function fmt(n) { return Number(n).toLocaleString('en-US', { minimumFractionDigi
     <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
       <div class="modal" style="max-width:360px;">
         <div class="modal-body" style="text-align:center;padding:28px 24px;">
-          <div style="font-size:40px;margin-bottom:12px;">🗑️</div>
+          <TrashIcon class="w-10 h-10 text-gray-400" style="margin: 0 auto 12px;" />
           <h3 style="margin-bottom:8px;">Delete Transaction?</h3>
           <p style="color:var(--text-secondary);font-size:13px;">This action cannot be undone.</p>
         </div>

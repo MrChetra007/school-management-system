@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { formatDate, toInputDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon, BookOpenIcon, CheckCircleIcon, ExclamationTriangleIcon, ClipboardDocumentListIcon, TrashIcon, ArrowUpTrayIcon } from '@heroicons/vue/24/outline'
 
 const books = ref([])
 const borrows = ref([])
@@ -137,29 +138,29 @@ const stats = computed(() => ({
 <template>
   <div>
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <div class="page-header">
       <div><h1 class="page-title">Library</h1><p class="page-subtitle">Books and borrowing management</p></div>
       <div style="display:flex;gap:10px;">
-        <button class="btn btn-secondary" @click="openBorrow">📤 Issue Book</button>
+        <button class="btn btn-secondary" @click="openBorrow"><ArrowUpTrayIcon class="w-4 h-4" /> Issue Book</button>
         <button class="btn btn-primary" @click="openAddBook">+ Add Book</button>
       </div>
     </div>
 
     <!-- Stats -->
     <div class="grid-cols-4" style="margin-bottom:20px;">
-      <div class="stat-card"><div class="stat-icon" style="background:#dbeafe;">📚</div><div class="stat-info"><div class="stat-label">Total Copies</div><div class="stat-value">{{ stats.total }}</div></div></div>
-      <div class="stat-card"><div class="stat-icon" style="background:#d1fae5;">✅</div><div class="stat-info"><div class="stat-label">Available</div><div class="stat-value" style="color:#059669;">{{ stats.available }}</div></div></div>
-      <div class="stat-card"><div class="stat-icon" style="background:#fef3c7;">📖</div><div class="stat-info"><div class="stat-label">Borrowed</div><div class="stat-value">{{ stats.borrowed }}</div></div></div>
-      <div class="stat-card"><div class="stat-icon" style="background:#fee2e2;">⚠️</div><div class="stat-info"><div class="stat-label">Overdue</div><div class="stat-value" style="color:#dc2626;">{{ stats.overdue }}</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#dbeafe;"><BookOpenIcon class="w-6 h-6" /></div><div class="stat-info"><div class="stat-label">Total Copies</div><div class="stat-value">{{ stats.total }}</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#d1fae5;"><CheckCircleIcon class="w-6 h-6" /></div><div class="stat-info"><div class="stat-label">Available</div><div class="stat-value" style="color:#059669;">{{ stats.available }}</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#fef3c7;"><BookOpenIcon class="w-6 h-6" /></div><div class="stat-info"><div class="stat-label">Borrowed</div><div class="stat-value">{{ stats.borrowed }}</div></div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:#fee2e2;"><ExclamationTriangleIcon class="w-6 h-6" /></div><div class="stat-info"><div class="stat-label">Overdue</div><div class="stat-value" style="color:#dc2626;">{{ stats.overdue }}</div></div></div>
     </div>
 
     <!-- Tabs -->
     <div class="tabs">
-      <div class="tab-item" :class="{ active: activeTab === 'books' }" @click="activeTab = 'books'">📚 Books</div>
-      <div class="tab-item" :class="{ active: activeTab === 'borrows' }" @click="activeTab = 'borrows'">📋 Borrow Records</div>
+      <div class="tab-item" :class="{ active: activeTab === 'books' }" @click="activeTab = 'books'"><BookOpenIcon class="w-4 h-4" /> Books</div>
+      <div class="tab-item" :class="{ active: activeTab === 'borrows' }" @click="activeTab = 'borrows'"><ClipboardDocumentListIcon class="w-4 h-4" /> Borrow Records</div>
     </div>
 
     <!-- Books table -->
@@ -172,7 +173,7 @@ const stats = computed(() => ({
       </div>
       <div class="card">
         <div v-if="loading" class="card-body"><div v-for="i in 5" :key="i" class="skeleton" style="height:44px;margin-bottom:10px;border-radius:8px;"></div></div>
-        <div v-else-if="filteredBooks.length === 0" class="empty-state"><div class="empty-state-icon">📚</div><p class="empty-state-title">No books found</p><button class="btn btn-primary" @click="openAddBook">Add Book</button></div>
+        <div v-else-if="filteredBooks.length === 0" class="empty-state"><div class="empty-state-icon"><BookOpenIcon class="w-12 h-12 text-gray-400" /></div><p class="empty-state-title">No books found</p><button class="btn btn-primary" @click="openAddBook">Add Book</button></div>
         <div v-else class="table-wrapper">
           <table>
             <thead><tr><th>Title</th><th>Author</th><th>ISBN</th><th>Category</th><th>Total</th><th>Available</th><th>Actions</th></tr></thead>
@@ -199,7 +200,7 @@ const stats = computed(() => ({
 
     <!-- Borrows table -->
     <div v-if="activeTab === 'borrows'" class="card">
-      <div v-if="borrows.length === 0" class="empty-state"><div class="empty-state-icon">📋</div><p class="empty-state-title">No borrow records</p></div>
+      <div v-if="borrows.length === 0" class="empty-state"><div class="empty-state-icon"><ClipboardDocumentListIcon class="w-12 h-12 text-gray-400" /></div><p class="empty-state-title">No borrow records</p></div>
       <div v-else class="table-wrapper">
         <table>
           <thead><tr><th>Book</th><th>Student</th><th>Borrow Date</th><th>Due Date</th><th>Status</th><th>Actions</th></tr></thead>
@@ -216,7 +217,7 @@ const stats = computed(() => ({
               </td>
               <td>
                 <button v-if="b.status === 'borrowed' || b.status === 'overdue'" class="btn btn-success btn-sm" @click="returnBook(b)">Return</button>
-                <span v-else class="badge badge-green">✓</span>
+                <span v-else class="badge badge-green"><CheckIcon class="w-4 h-4" /></span>
               </td>
             </tr>
           </tbody>
@@ -269,7 +270,7 @@ const stats = computed(() => ({
     <!-- Delete confirm -->
     <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget=null">
       <div class="modal" style="max-width:360px;">
-        <div class="modal-body" style="text-align:center;padding:28px 24px;"><div style="font-size:40px;margin-bottom:12px;">🗑️</div><h3 style="margin-bottom:8px;">Delete Book?</h3><p style="color:var(--text-secondary);font-size:13px;">Delete <strong>{{ deleteTarget.title }}</strong>?</p></div>
+        <div class="modal-body" style="text-align:center;padding:28px 24px;"><div><TrashIcon class="w-10 h-10 text-red-500" /></div><h3 style="margin-bottom:8px;">Delete Book?</h3><p style="color:var(--text-secondary);font-size:13px;">Delete <strong>{{ deleteTarget.title }}</strong>?</p></div>
         <div class="modal-footer"><button class="btn btn-ghost" @click="deleteTarget=null">Cancel</button><button class="btn btn-danger" @click="doDeleteBook">Yes, Delete</button></div>
       </div>
     </div>

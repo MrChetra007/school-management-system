@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 import { computeMonthlyAverage, computeSemesterAverage, computeRank } from '@/utils/scoreCalculator'
 import { generateSemesterScorePDF } from '@/utils/exportPdf'
+import { CheckIcon, XCircleIcon, ArrowDownTrayIcon, BuildingOfficeIcon } from '@heroicons/vue/24/outline'
 
 const auth = useAuthStore()
 const students = ref([])
@@ -217,7 +218,7 @@ watch(selectedSemester, fetchAllScores)
 <template>
   <div class="scores-semester-view">
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <div class="page-header no-print">
@@ -231,7 +232,7 @@ watch(selectedSemester, fetchAllScores)
           Print PDF
         </button>
         <button class="btn btn-primary" @click="saveAll" :disabled="saving || loading">
-          {{ saving ? 'Saving…' : '💾 Save Exam Scores' }}
+          <ArrowDownTrayIcon class="w-4 h-4" /> {{ saving ? 'Saving…' : 'Save Exam Scores' }}
         </button>
       </div>
     </div>
@@ -241,7 +242,7 @@ watch(selectedSemester, fetchAllScores)
     </div>
 
     <div v-else-if="!classInfo" class="empty-state">
-      <div class="empty-state-icon">🏫</div>
+      <BuildingOfficeIcon class="w-12 h-12 text-gray-400" />
       <p class="empty-state-title">No Class Assigned</p>
     </div>
 

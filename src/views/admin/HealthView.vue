@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
+import { ChartBarIcon, BeakerIcon, CheckIcon, ClockIcon } from '@heroicons/vue/24/outline'
 
 const activeTab = ref('growth')
 const loading = ref(true)
@@ -45,8 +46,8 @@ const filteredVaccinations = computed(() => {
     </div>
 
     <div class="tabs">
-      <div class="tab-item" :class="{ active: activeTab === 'growth' }" @click="activeTab = 'growth'">📈 Growth Records</div>
-      <div class="tab-item" :class="{ active: activeTab === 'vaccinations' }" @click="activeTab = 'vaccinations'">💉 Vaccinations</div>
+      <div class="tab-item" :class="{ active: activeTab === 'growth' }" @click="activeTab = 'growth'"><ChartBarIcon class="w-4 h-4" /> Growth Records</div>
+      <div class="tab-item" :class="{ active: activeTab === 'vaccinations' }" @click="activeTab = 'vaccinations'"><BeakerIcon class="w-4 h-4" /> Vaccinations</div>
     </div>
 
     <div class="filters-bar">
@@ -90,7 +91,8 @@ const filteredVaccinations = computed(() => {
               <td>{{ formatDate(v.date) }}</td>
               <td>
                 <span class="badge" :class="v.completed ? 'badge-green' : 'badge-yellow'">
-                  {{ v.completed ? '✅ Completed' : '⏳ Pending' }}
+                  <template v-if="v.completed"><CheckIcon class="w-4 h-4" /> Completed</template>
+                  <template v-else><ClockIcon class="w-4 h-4" /> Pending</template>
                 </span>
               </td>
             </tr>

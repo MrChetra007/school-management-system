@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useAcademicYearStore } from '@/stores/academicYear'
 import { formatDate, toInputDate } from '@/utils/formatDate'
 import { useRouter } from 'vue-router'
+import { CheckIcon, XCircleIcon, AcademicCapIcon, TrashIcon } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const yearStore = useAcademicYearStore()
@@ -110,7 +111,7 @@ function initials(name) {
   <div>
     <div class="toast-container">
       <div v-if="toast" class="toast" :class="`toast-${toast.type}`">
-        {{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}
+        <CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}
       </div>
     </div>
 
@@ -141,7 +142,7 @@ function initials(name) {
         <div v-for="i in 6" :key="i" class="skeleton" style="height:52px;margin-bottom:10px;border-radius:8px;"></div>
       </div>
       <div v-else-if="filtered.length === 0" class="empty-state">
-        <div class="empty-state-icon">🎓</div>
+        <AcademicCapIcon class="w-12 h-12 text-gray-400" />
         <p class="empty-state-title">No students found</p>
         <p class="empty-state-desc">Add your first student to get started</p>
         <button class="btn btn-primary" @click="openAdd">Add Student</button>
@@ -275,7 +276,7 @@ function initials(name) {
     <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
       <div class="modal" style="max-width:380px;">
         <div class="modal-body" style="text-align:center;padding:32px 24px;">
-          <div style="font-size:40px;margin-bottom:12px;">🗑️</div>
+          <TrashIcon class="w-10 h-10 text-gray-400" style="margin: 0 auto 12px;" />
           <h3 style="margin-bottom:8px;">Delete Student?</h3>
           <p style="color:var(--text-secondary);font-size:13px;">Delete <strong>{{ deleteTarget.full_name }}</strong>? All related records will also be removed.</p>
         </div>

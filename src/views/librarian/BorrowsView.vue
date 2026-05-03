@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon, ClipboardDocumentListIcon, ArrowUpTrayIcon } from '@heroicons/vue/24/outline'
 
 const borrows = ref([])
 const books = ref([])
@@ -107,7 +108,7 @@ function showToast(msg, type = 'success') {
 <template>
   <div>
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <div class="page-header">
@@ -116,7 +117,7 @@ function showToast(msg, type = 'success') {
         <p class="page-subtitle">Track issued books and returns</p>
       </div>
       <button class="btn btn-primary" @click="showModal = true">
-        📤 Issue Book
+        <ArrowUpTrayIcon class="w-4 h-4" /> Issue Book
       </button>
     </div>
 
@@ -132,7 +133,7 @@ function showToast(msg, type = 'success') {
         <div v-for="i in 5" :key="i" class="skeleton" style="height:52px;margin-bottom:10px;border-radius:8px;"></div>
       </div>
       <div v-else-if="filtered.length === 0" class="empty-state">
-        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-icon"><ClipboardDocumentListIcon class="w-12 h-12" /></div>
         <p class="empty-state-title">No borrowing records found</p>
       </div>
       <div v-else class="table-wrapper">

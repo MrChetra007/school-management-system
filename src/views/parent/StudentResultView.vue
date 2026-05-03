@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
+import { QuestionMarkCircleIcon } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
 const studentId = route.params.id
@@ -70,7 +71,7 @@ async function loadData() {
     <div v-if="loading" class="skeleton" style="height:400px; border-radius:24px;"></div>
     
     <div v-else-if="!student" class="empty-state">
-      <div class="empty-state-icon">❓</div>
+      <QuestionMarkCircleIcon class="w-12 h-12 text-gray-400" />
       <p class="empty-state-title">រកមិនឃើញព័ត៌មានសិស្សទេ (Student details not found)</p>
       <router-link to="/parent" class="btn btn-primary mt-4">Go Back</router-link>
     </div>

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { CheckIcon, XCircleIcon, UserGroupIcon } from '@heroicons/vue/24/outline'
 
 // State
 const users = ref([])
@@ -238,7 +239,7 @@ function showToast(msg, type = 'success') {
 <template>
   <div class="users-view">
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <div class="page-header">
@@ -264,7 +265,7 @@ function showToast(msg, type = 'success') {
       </div>
 
       <div v-else-if="filteredUsers.length === 0" class="empty-state">
-        <div class="empty-state-icon">👥</div>
+        <UserGroupIcon class="w-12 h-12 text-gray-400" />
         <p class="empty-state-title">មិនមានបុគ្គលិកនៅក្នុងក្រុមនេះទេ</p>
       </div>
 

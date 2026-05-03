@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon } from '@heroicons/vue/24/outline'
 
 const overdueRecords = ref([])
 const loading = ref(true)
@@ -47,7 +48,7 @@ function showToast(msg, type = 'success') {
 <template>
   <div>
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <div class="page-header">
@@ -63,7 +64,7 @@ function showToast(msg, type = 'success') {
 
     <div v-else class="card">
       <div v-if="overdueRecords.length === 0" class="empty-state">
-        <div class="empty-state-icon" style="color:var(--success-color);">✅</div>
+        <div class="empty-state-icon" style="color:var(--success-color);"><CheckIcon class="w-12 h-12" /></div>
         <p class="empty-state-title">No Overdue Books</p>
         <p class="empty-state-desc">All borrowed items are currently within their due dates.</p>
       </div>

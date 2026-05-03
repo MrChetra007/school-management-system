@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAcademicYearStore } from '@/stores/academicYear'
 import { formatDate } from '@/utils/formatDate'
+import { AcademicCapIcon } from '@heroicons/vue/24/outline'
 
 const yearStore = useAcademicYearStore()
 
@@ -216,7 +217,7 @@ function handlePrint() {
       </div>
 
       <div v-else-if="teachers.length === 0" class="empty-state">
-        <div class="empty-state-icon">👩‍🏫</div>
+        <AcademicCapIcon class="w-12 h-12 text-gray-400" />
         <p class="empty-state-title">មិនទាន់មានគ្រូបង្រៀននៅក្នុងប្រព័ន្ធទេ</p>
       </div>
 

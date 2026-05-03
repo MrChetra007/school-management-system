@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { CheckIcon, XCircleIcon, AcademicCapIcon, CameraIcon, TrashIcon } from '@heroicons/vue/24/outline'
 import { supabase } from '@/lib/supabase'
 import { formatDate, toInputDate } from '@/utils/formatDate'
 
@@ -97,7 +98,7 @@ function initials(name) {
   <div>
     <div class="toast-container">
       <div v-if="toast" class="toast" :class="`toast-${toast.type}`">
-        {{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}
+        <CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}
       </div>
     </div>
 
@@ -121,7 +122,7 @@ function initials(name) {
         <div v-for="i in 5" :key="i" class="skeleton" style="height:52px;margin-bottom:10px;border-radius:8px;"></div>
       </div>
       <div v-else-if="filtered.length === 0" class="empty-state">
-        <div class="empty-state-icon">👩‍🏫</div>
+        <AcademicCapIcon class="w-12 h-12 text-gray-400" />
         <p class="empty-state-title">No teachers found</p>
         <p class="empty-state-desc">Add your first teacher to get started</p>
         <button class="btn btn-primary" @click="openAdd">Add Teacher</button>
@@ -182,7 +183,7 @@ function initials(name) {
             </div>
             <div>
               <label class="btn btn-ghost btn-sm" style="cursor:pointer;">
-                {{ uploadingPhoto ? 'Uploading…' : '📷 Upload Photo' }}
+                <CameraIcon class="w-4 h-4" /> {{ uploadingPhoto ? 'Uploading…' : 'Upload Photo' }}
                 <input type="file" accept="image/*" style="display:none;" @change="uploadPhoto" :disabled="uploadingPhoto"/>
               </label>
               <p style="font-size:11px;color:var(--text-muted);margin-top:6px;">JPG, PNG — stored in Supabase Storage</p>
@@ -233,7 +234,7 @@ function initials(name) {
     <div v-if="deleteTarget" class="modal-overlay" @click.self="deleteTarget = null">
       <div class="modal" style="max-width:380px;">
         <div class="modal-body" style="text-align:center;padding:32px 24px;">
-          <div style="font-size:40px;margin-bottom:12px;">🗑️</div>
+          <TrashIcon class="w-10 h-10 text-gray-400" style="margin: 0 auto 12px;" />
           <h3 style="margin-bottom:8px;">Delete Teacher?</h3>
           <p style="color:var(--text-secondary);font-size:13px;">Delete <strong>{{ deleteTarget.full_name }}</strong>? This cannot be undone.</p>
         </div>

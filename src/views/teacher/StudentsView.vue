@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
 import { useRouter } from 'vue-router'
+import { BuildingOfficeIcon, AcademicCapIcon, PhoneIcon } from '@heroicons/vue/24/outline'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -74,7 +75,7 @@ function initials(name) {
     </div>
 
     <div v-else-if="!classInfo" class="empty-state">
-      <div class="empty-state-icon">🏫</div>
+      <div class="empty-state-icon"><BuildingOfficeIcon class="w-12 h-12 text-gray-400" /></div>
       <p class="empty-state-title">No Class Assigned</p>
     </div>
 
@@ -88,7 +89,7 @@ function initials(name) {
 
       <div class="card">
         <div v-if="filtered.length === 0" class="empty-state">
-          <div class="empty-state-icon">🎓</div>
+          <div class="empty-state-icon"><AcademicCapIcon class="w-12 h-12 text-gray-400" /></div>
           <p class="empty-state-title">No students found</p>
         </div>
         <div v-else class="table-wrapper">
@@ -111,7 +112,7 @@ function initials(name) {
                 <td><span class="badge" :class="s.gender === 'Male' ? 'badge-blue' : 'badge-red'">{{ s.gender }}</span></td>
                 <td style="font-size:13px;">{{ formatDate(s.dob) }}</td>
                 <td style="font-size:13px;">
-                  <div v-if="s.phone_number">📞 {{ s.phone_number }}</div>
+                  <div v-if="s.phone_number"><PhoneIcon class="w-3 h-3" style="display:inline;vertical-align:middle;margin-right:4px;" /> {{ s.phone_number }}</div>
                   <div v-else style="color:var(--text-muted);">No phone</div>
                 </td>
                 <td>

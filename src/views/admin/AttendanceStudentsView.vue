@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAcademicYearStore } from '@/stores/academicYear'
 import { formatDate } from '@/utils/formatDate'
+import { ClipboardDocumentListIcon, UserGroupIcon } from '@heroicons/vue/24/outline'
 
 const yearStore = useAcademicYearStore()
 
@@ -206,12 +207,12 @@ function handlePrint() {
       </div>
 
       <div v-else-if="!selectedClassId" class="empty-state">
-        <div class="empty-state-icon">📋</div>
+        <ClipboardDocumentListIcon class="w-12 h-12 text-gray-400" />
         <p class="empty-state-title">សូមជ្រើសរើសថ្នាក់ដើម្បីមើលអវត្តមាន</p>
       </div>
 
       <div v-else-if="students.length === 0" class="empty-state">
-        <div class="empty-state-icon">👥</div>
+        <UserGroupIcon class="w-12 h-12 text-gray-400" />
         <p class="empty-state-title">មិនមានសិស្សនៅក្នុងថ្នាក់នេះទេ</p>
       </div>
 

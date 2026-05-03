@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 import { formatDate, toInputDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon, ArrowsUpDownIcon } from '@heroicons/vue/24/outline'
 
 const auth = useAuthStore()
 const growthRecords = ref([])
@@ -114,7 +115,7 @@ function showToast(msg, type = 'success') {
 <template>
   <div>
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <div class="page-header">
@@ -133,7 +134,7 @@ function showToast(msg, type = 'success') {
     </div>
 
     <div v-else-if="!classInfo" class="empty-state">
-      <div class="empty-state-icon">📏</div>
+      <div class="empty-state-icon"><ArrowsUpDownIcon class="w-12 h-12 text-gray-400" /></div>
       <p class="empty-state-title">No Class Assigned</p>
     </div>
 
@@ -147,7 +148,7 @@ function showToast(msg, type = 'success') {
 
       <div class="card">
         <div v-if="filtered.length === 0" class="empty-state">
-          <div class="empty-state-icon">📏</div>
+          <div class="empty-state-icon"><ArrowsUpDownIcon class="w-12 h-12 text-gray-400" /></div>
           <p class="empty-state-title">No growth records found</p>
         </div>
         <div v-else class="table-wrapper">

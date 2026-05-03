@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { formatDate, toInputDate } from '@/utils/formatDate'
+import { HeartIcon, BriefcaseMedicalIcon, ArrowsUpDownIcon, BeakerIcon, FaceFrownIcon, ArrowDownTrayIcon, CheckIcon, XCircleIcon, ClockIcon, CalendarIcon, ArrowsRightLeftIcon } from '@heroicons/vue/24/outline'
 import { Line } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -219,7 +220,7 @@ function initials(name) {
 <template>
   <div>
     <div class="toast-container">
-      <div v-if="toast" class="toast" :class="`toast-${toast.type}`">{{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}</div>
+      <div v-if="toast" class="toast" :class="`toast-${toast.type}`"><component :is="toast.type === 'success' ? CheckIcon : XCircleIcon" class="w-4 h-4" /> {{ toast.msg }}</div>
     </div>
 
     <!-- Back button -->
@@ -258,16 +259,16 @@ function initials(name) {
 
       <!-- Tabs -->
       <div class="tabs">
-        <div class="tab-item" :class="{ active: activeTab === 'health' }" @click="activeTab = 'health'">❤️ Health</div>
-        <div class="tab-item" :class="{ active: activeTab === 'checkups' }" @click="activeTab = 'checkups'">🏥 Checkups</div>
-        <div class="tab-item" :class="{ active: activeTab === 'growth' }" @click="activeTab = 'growth'">📏 Growth</div>
-        <div class="tab-item" :class="{ active: activeTab === 'vaccinations' }" @click="activeTab = 'vaccinations'">💉 Vaccinations</div>
-        <div class="tab-item" :class="{ active: activeTab === 'sickdays' }" @click="activeTab = 'sickdays'">🤒 Sick Days</div>
+        <div class="tab-item" :class="{ active: activeTab === 'health' }" @click="activeTab = 'health'"><HeartIcon class="w-4 h-4" /> Health</div>
+        <div class="tab-item" :class="{ active: activeTab === 'checkups' }" @click="activeTab = 'checkups'"><BriefcaseMedicalIcon class="w-4 h-4" /> Checkups</div>
+        <div class="tab-item" :class="{ active: activeTab === 'growth' }" @click="activeTab = 'growth'"><ArrowsUpDownIcon class="w-4 h-4" /> Growth</div>
+        <div class="tab-item" :class="{ active: activeTab === 'vaccinations' }" @click="activeTab = 'vaccinations'"><BeakerIcon class="w-4 h-4" /> Vaccinations</div>
+        <div class="tab-item" :class="{ active: activeTab === 'sickdays' }" @click="activeTab = 'sickdays'"><FaceFrownIcon class="w-4 h-4" /> Sick Days</div>
       </div>
 
       <!-- Health profile -->
       <div v-if="activeTab === 'health'" class="card">
-        <div class="card-header"><span class="card-title">Health Profile</span><button class="btn btn-primary btn-sm" @click="saveHealth" :disabled="saving">{{ saving ? 'Saving…' : '💾 Save' }}</button></div>
+        <div class="card-header"><span class="card-title">Health Profile</span><button class="btn btn-primary btn-sm" @click="saveHealth" :disabled="saving">{{ saving ? 'Saving…' : '' }} <ArrowDownTrayIcon class="w-4 h-4" style="display:inline;vertical-align:middle;" /> Save</button></div>
         <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
           <div class="form-group">
             <label class="form-label">Blood Type</label>
@@ -308,7 +309,7 @@ function initials(name) {
           <button class="btn btn-primary btn-sm" @click="openCheckup()">+ Add Checkup</button>
         </div>
         <div class="card">
-          <div v-if="checkups.length === 0" class="empty-state"><div class="empty-state-icon">🏥</div><p class="empty-state-title">No checkups recorded</p></div>
+          <div v-if="checkups.length === 0" class="empty-state"><BriefcaseMedicalIcon class="w-12 h-12 text-gray-400" /><p class="empty-state-title">No checkups recorded</p></div>
           <div v-else class="table-wrapper">
             <table>
               <thead><tr><th>Date</th><th>Type</th><th>Result</th><th>Vision</th><th>Hearing</th><th>Dental</th><th>Notes</th><th></th></tr></thead>
@@ -339,21 +340,21 @@ function initials(name) {
         <!-- Summary Cards -->
         <div v-if="latestGrowth" class="grid-cols-3" style="margin-bottom:20px; gap:16px;">
           <div class="stat-card">
-            <div class="stat-icon" style="background:#eff6ff;color:#3b82f6;">📏</div>
+            <div class="stat-icon" style="background:#eff6ff;color:#3b82f6;"><ArrowsUpDownIcon class="w-6 h-6" /></div>
             <div class="stat-info">
               <div class="stat-label">Latest Height</div>
               <div class="stat-value">{{ latestGrowth.height }} <span style="font-size:14px;font-weight:500;">cm</span></div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#ecfdf5;color:#10b981;">⚖️</div>
+            <div class="stat-icon" style="background:#ecfdf5;color:#10b981;"><ArrowsRightLeftIcon class="w-6 h-6" /></div>
             <div class="stat-info">
               <div class="stat-label">Latest Weight</div>
               <div class="stat-value">{{ latestGrowth.weight }} <span style="font-size:14px;font-weight:500;">kg</span></div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon" style="background:#fff7ed;color:#f97316;">📅</div>
+            <div class="stat-icon" style="background:#fff7ed;color:#f97316;"><CalendarIcon class="w-6 h-6" /></div>
             <div class="stat-info">
               <div class="stat-label">Last Check</div>
               <div class="stat-value" style="font-size:18px;margin-top:8px;">{{ formatDate(latestGrowth.date) }}</div>
@@ -362,7 +363,7 @@ function initials(name) {
         </div>
 
         <div class="card">
-          <div v-if="growth.length === 0" class="empty-state"><div class="empty-state-icon">📏</div><p class="empty-state-title">No growth records</p></div>
+          <div v-if="growth.length === 0" class="empty-state"><ArrowsUpDownIcon class="w-12 h-12 text-gray-400" /><p class="empty-state-title">No growth records</p></div>
           <div v-else class="table-wrapper">
             <table>
               <thead><tr><th>Date</th><th>Age</th><th>Height (cm)</th><th>Weight (kg)</th><th>Actions</th></tr></thead>
@@ -400,7 +401,7 @@ function initials(name) {
           <button class="btn btn-primary btn-sm" @click="openVaccine()">+ Add Vaccine</button>
         </div>
         <div class="card">
-          <div v-if="vaccinations.length === 0" class="empty-state"><div class="empty-state-icon">💉</div><p class="empty-state-title">No vaccinations recorded</p></div>
+          <div v-if="vaccinations.length === 0" class="empty-state"><BeakerIcon class="w-12 h-12 text-gray-400" /><p class="empty-state-title">No vaccinations recorded</p></div>
           <div v-else class="table-wrapper">
             <table>
               <thead><tr><th>Vaccine</th><th>Description</th><th>Date</th><th>Status</th><th></th></tr></thead>
@@ -409,7 +410,7 @@ function initials(name) {
                   <td style="font-weight:600;">{{ v.name }}</td>
                   <td>{{ v.description || '—' }}</td>
                   <td>{{ formatDate(v.date) }}</td>
-                  <td><span class="badge" :class="v.completed ? 'badge-green' : 'badge-yellow'">{{ v.completed ? '✅ Completed' : '⏳ Pending' }}</span></td>
+                  <td><span class="badge" :class="v.completed ? 'badge-green' : 'badge-yellow'"><component :is="v.completed ? CheckIcon : ClockIcon" class="w-3 h-3" /> {{ v.completed ? 'Completed' : 'Pending' }}</span></td>
                   <td><button class="btn btn-ghost btn-sm btn-icon" @click="openVaccine(v)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button></td>
                 </tr>
               </tbody>
@@ -424,7 +425,7 @@ function initials(name) {
           <button class="btn btn-primary btn-sm" @click="openSickDay()">+ Add Sick Day</button>
         </div>
         <div class="card">
-          <div v-if="sickDays.length === 0" class="empty-state"><div class="empty-state-icon">🤒</div><p class="empty-state-title">No sick days recorded</p></div>
+          <div v-if="sickDays.length === 0" class="empty-state"><FaceFrownIcon class="w-12 h-12 text-gray-400" /><p class="empty-state-title">No sick days recorded</p></div>
           <div v-else class="table-wrapper">
             <table>
               <thead><tr><th>Date</th><th>Reason</th><th>Duration (days)</th><th>Notes</th><th></th></tr></thead>

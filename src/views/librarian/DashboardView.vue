@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { BookOpenIcon, CheckCircleIcon, ExclamationTriangleIcon, ArrowUpTrayIcon, PlusIcon } from '@heroicons/vue/24/outline'
 
 const stats = ref({
   totalBooks: 0,
@@ -68,28 +69,28 @@ async function loadStats() {
     <div v-else>
       <div class="grid-cols-4" style="margin-bottom:24px;">
         <div class="stat-card">
-          <div class="stat-icon" style="background:#e0f2fe;color:#0ea5e9;">📚</div>
+          <div class="stat-icon" style="background:#e0f2fe;color:#0ea5e9;"><BookOpenIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">Total Books</div>
             <div class="stat-value">{{ stats.totalBooks }}</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:#f0fdf4;color:#22c55e;">✅</div>
+          <div class="stat-icon" style="background:#f0fdf4;color:#22c55e;"><CheckCircleIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">Available</div>
             <div class="stat-value">{{ stats.availableBooks }}</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:#fff7ed;color:#f97316;">📖</div>
+          <div class="stat-icon" style="background:#fff7ed;color:#f97316;"><BookOpenIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">Borrowed</div>
             <div class="stat-value">{{ stats.borrowedBooks }}</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:#fef2f2;color:#ef4444;">⚠️</div>
+          <div class="stat-icon" style="background:#fef2f2;color:#ef4444;"><ExclamationTriangleIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">Overdue</div>
             <div class="stat-value" style="color:#ef4444;">{{ stats.overdueBooks }}</div>
@@ -129,13 +130,13 @@ async function loadStats() {
           <div class="card-header"><span class="card-title">Quick Actions</span></div>
           <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
             <button class="btn btn-primary w-full" @click="$router.push('/librarian/borrows')">
-              📤 Issue a Book
+              <ArrowUpTrayIcon class="w-4 h-4" /> Issue a Book
             </button>
             <button class="btn btn-secondary w-full" @click="$router.push('/librarian/books')">
-              ➕ Add New Book
+              <PlusIcon class="w-4 h-4" /> Add New Book
             </button>
             <button class="btn btn-ghost w-full" @click="$router.push('/librarian/overdue')">
-              ⚠️ Check Overdue
+              <ExclamationTriangleIcon class="w-4 h-4" /> Check Overdue
             </button>
           </div>
         </div>

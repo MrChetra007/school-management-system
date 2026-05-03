@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { formatDate, toInputDate } from '@/utils/formatDate'
+import { CheckIcon, XCircleIcon, HeartIcon, CalendarIcon, StarIcon, ArrowsUpDownIcon, BeakerIcon, FaceFrownIcon, PencilIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 
 const route = useRoute()
 const router = useRouter()
@@ -129,7 +130,7 @@ function initials(name) { return (name || '').split(' ').map(w => w[0]).join('')
   <div class="student-detail-page">
     <div class="toast-container">
       <div v-if="toast" class="toast" :class="`toast-${toast.type}`">
-        {{ toast.type === 'success' ? '✅' : '❌' }} {{ toast.msg }}
+        <CheckIcon v-if="toast.type === 'success'" class="w-4 h-4" /><XCircleIcon v-else class="w-4 h-4" /> {{ toast.msg }}
       </div>
     </div>
 
@@ -160,20 +161,20 @@ function initials(name) { return (name || '').split(' ').map(w => w[0]).join('')
 
       <!-- Tabs Navigation -->
       <div class="tabs">
-        <div class="tab-item" :class="{ active: activeTab === 'health' }" @click="activeTab = 'health'">🩺 Health & Growth</div>
-        <div class="tab-item" :class="{ active: activeTab === 'attendance' }" @click="activeTab = 'attendance'">📅 Attendance</div>
-        <div class="tab-item" :class="{ active: activeTab === 'scores' }" @click="activeTab = 'scores'">⭐ Scores</div>
+        <div class="tab-item" :class="{ active: activeTab === 'health' }" @click="activeTab = 'health'"><HeartIcon class="w-4 h-4" /> Health & Growth</div>
+        <div class="tab-item" :class="{ active: activeTab === 'attendance' }" @click="activeTab = 'attendance'"><CalendarIcon class="w-4 h-4" /> Attendance</div>
+        <div class="tab-item" :class="{ active: activeTab === 'scores' }" @click="activeTab = 'scores'"><StarIcon class="w-4 h-4" /> Scores</div>
       </div>
 
       <!-- Tab Content -->
       <div class="card tab-content-card">
-        <!-- 🩺 Health Tab -->
+        <!-- Health Tab -->
         <div v-if="activeTab === 'health'" class="card-body">
           <div class="health-grid">
             <!-- Growth Section -->
             <section class="health-section">
               <div class="section-header">
-                <h3 class="section-title">📏 Growth Records</h3>
+                <h3 class="section-title"><ArrowsUpDownIcon class="w-4 h-4" /> Growth Records</h3>
                 <button class="btn btn-primary btn-xs" @click="openAdd('growth')">+ Add</button>
               </div>
               <div class="table-wrapper mini-table">
@@ -186,8 +187,8 @@ function initials(name) { return (name || '').split(' ').map(w => w[0]).join('')
                       <td style="font-weight:700;">{{ g.weight }}</td>
                       <td>
                         <div class="table-actions">
-                          <button class="btn btn-ghost btn-xs btn-icon" @click="openEdit('growth', g)">✎</button>
-                          <button class="btn btn-ghost btn-xs btn-icon text-danger" @click="handleDelete('growth', g.id)">✕</button>
+                          <button class="btn btn-ghost btn-xs btn-icon" @click="openEdit('growth', g)"><PencilIcon class="w-3 h-3" /></button>
+                          <button class="btn btn-ghost btn-xs btn-icon text-danger" @click="handleDelete('growth', g.id)"><XMarkIcon class="w-3 h-3" /></button>
                         </div>
                       </td>
                     </tr>
@@ -200,7 +201,7 @@ function initials(name) { return (name || '').split(' ').map(w => w[0]).join('')
             <!-- Vaccinations Section -->
             <section class="health-section">
               <div class="section-header">
-                <h3 class="section-title">💉 Vaccinations</h3>
+                <h3 class="section-title"><BeakerIcon class="w-4 h-4" /> Vaccinations</h3>
                 <button class="btn btn-primary btn-xs" @click="openAdd('vaccine')">+ Add</button>
               </div>
               <div class="table-wrapper mini-table">
@@ -213,8 +214,8 @@ function initials(name) { return (name || '').split(' ').map(w => w[0]).join('')
                       <td><span class="badge badge-xs" :class="v.completed ? 'badge-green' : 'badge-yellow'">{{ v.completed ? 'Done' : 'Pending' }}</span></td>
                       <td>
                         <div class="table-actions">
-                          <button class="btn btn-ghost btn-xs btn-icon" @click="openEdit('vaccine', v)">✎</button>
-                          <button class="btn btn-ghost btn-xs btn-icon text-danger" @click="handleDelete('vaccine', v.id)">✕</button>
+                          <button class="btn btn-ghost btn-xs btn-icon" @click="openEdit('vaccine', v)"><PencilIcon class="w-3 h-3" /></button>
+                          <button class="btn btn-ghost btn-xs btn-icon text-danger" @click="handleDelete('vaccine', v.id)"><XMarkIcon class="w-3 h-3" /></button>
                         </div>
                       </td>
                     </tr>
@@ -227,7 +228,7 @@ function initials(name) { return (name || '').split(' ').map(w => w[0]).join('')
             <!-- Sick Days Section -->
             <section class="health-section" style="grid-column: span 2;">
               <div class="section-header">
-                <h3 class="section-title">🤒 Sick Day History</h3>
+                <h3 class="section-title"><FaceFrownIcon class="w-4 h-4" /> Sick Day History</h3>
                 <button class="btn btn-primary btn-xs" @click="openAdd('sick')">+ Add</button>
               </div>
               <div class="table-wrapper">
@@ -241,8 +242,8 @@ function initials(name) { return (name || '').split(' ').map(w => w[0]).join('')
                       <td style="font-size:12px;">{{ s.notes || '—' }}</td>
                       <td>
                         <div class="table-actions">
-                          <button class="btn btn-ghost btn-xs btn-icon" @click="openEdit('sick', s)">✎</button>
-                          <button class="btn btn-ghost btn-xs btn-icon text-danger" @click="handleDelete('sick', s.id)">✕</button>
+                          <button class="btn btn-ghost btn-xs btn-icon" @click="openEdit('sick', s)"><PencilIcon class="w-3 h-3" /></button>
+                          <button class="btn btn-ghost btn-xs btn-icon text-danger" @click="handleDelete('sick', s.id)"><XMarkIcon class="w-3 h-3" /></button>
                         </div>
                       </td>
                     </tr>
@@ -254,7 +255,7 @@ function initials(name) { return (name || '').split(' ').map(w => w[0]).join('')
           </div>
         </div>
 
-        <!-- 📅 Attendance Tab -->
+        <!-- Attendance Tab -->
         <div v-if="activeTab === 'attendance'" class="table-wrapper">
           <table>
             <thead><tr><th>Date</th><th>Status</th><th>Reason</th></tr></thead>
@@ -294,7 +295,7 @@ function initials(name) { return (name || '').split(' ').map(w => w[0]).join('')
             {{ isEdit ? 'Edit' : 'Add' }} 
             {{ modalType === 'growth' ? 'Growth Record' : modalType === 'vaccine' ? 'Vaccination' : 'Sick Day' }}
           </span>
-          <button class="btn btn-ghost btn-sm btn-icon" @click="showModal = false">✕</button>
+          <button class="btn btn-ghost btn-sm btn-icon" @click="showModal = false"><XMarkIcon class="w-4 h-4" /></button>
         </div>
         <div class="modal-body" style="display:flex; flex-direction:column; gap:16px;">
           <!-- Shared Date Field -->

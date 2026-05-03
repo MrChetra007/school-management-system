@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
+import { AcademicCapIcon, CheckCircleIcon, BookOpenIcon, StarIcon, DocumentTextIcon } from '@heroicons/vue/24/outline'
 
 const stats = ref({
   students: 0,
@@ -85,28 +86,28 @@ function exportPDF(title, type) {
       <!-- Quick Stats Grid -->
       <div class="grid-cols-4" style="margin-bottom:24px;">
         <div class="stat-card">
-          <div class="stat-icon" style="background:#e0f2fe;color:#0ea5e9;">👨‍🎓</div>
+          <div class="stat-icon" style="background:#e0f2fe;color:#0ea5e9;"><AcademicCapIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">Enrollment</div>
             <div class="stat-value">{{ stats.students }}</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:#f0fdf4;color:#22c55e;">✅</div>
+          <div class="stat-icon" style="background:#f0fdf4;color:#22c55e;"><CheckCircleIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">Attendance</div>
             <div class="stat-value">{{ stats.avgAttendance }}%</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:#fefce8;color:#eab308;">⭐</div>
+          <div class="stat-icon" style="background:#fefce8;color:#eab308;"><StarIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">Avg Score</div>
             <div class="stat-value">{{ stats.avgScore }}</div>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon" style="background:#faf5ff;color:#a855f7;">📚</div>
+          <div class="stat-icon" style="background:#faf5ff;color:#a855f7;"><BookOpenIcon class="w-6 h-6" /></div>
           <div class="stat-info">
             <div class="stat-label">Books Out</div>
             <div class="stat-value">{{ stats.booksBorrowed }}</div>
@@ -124,10 +125,10 @@ function exportPDF(title, type) {
             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Generate detailed attendance summaries by class or month.</p>
             <div style="display:flex;flex-direction:column;gap:8px;">
               <button class="btn btn-ghost" style="justify-content:flex-start;" @click="exportPDF('Monthly Attendance Summary', 'Attendance')">
-                📄 Monthly Summary (PDF)
+                <DocumentTextIcon class="w-4 h-4" /> Monthly Summary (PDF)
               </button>
               <button class="btn btn-ghost" style="justify-content:flex-start;" @click="exportPDF('Class Attendance Ranking', 'Attendance')">
-                📄 Class Ranking (PDF)
+                <DocumentTextIcon class="w-4 h-4" /> Class Ranking (PDF)
               </button>
             </div>
           </div>
@@ -140,10 +141,10 @@ function exportPDF(title, type) {
             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Analyze student performance across subjects and classes.</p>
             <div style="display:flex;flex-direction:column;gap:8px;">
               <button class="btn btn-ghost" style="justify-content:flex-start;" @click="exportPDF('Grade Distribution Report', 'Academics')">
-                📄 Grade Distribution (PDF)
+                <DocumentTextIcon class="w-4 h-4" /> Grade Distribution (PDF)
               </button>
               <button class="btn btn-ghost" style="justify-content:flex-start;" @click="exportPDF('Subject Performance Analytics', 'Academics')">
-                📄 Subject Analytics (PDF)
+                <DocumentTextIcon class="w-4 h-4" /> Subject Analytics (PDF)
               </button>
             </div>
           </div>
@@ -156,10 +157,10 @@ function exportPDF(title, type) {
             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Review school budget, income, and expenditures.</p>
             <div style="display:flex;flex-direction:column;gap:8px;">
               <button class="btn btn-ghost" style="justify-content:flex-start;" @click="exportPDF('Quarterly Budget Report', 'Finance')">
-                📄 Quarterly Review (PDF)
+                <DocumentTextIcon class="w-4 h-4" /> Quarterly Review (PDF)
               </button>
               <button class="btn btn-ghost" style="justify-content:flex-start;" @click="exportPDF('Expense Breakdown', 'Finance')">
-                📄 Expense Breakdown (PDF)
+                <DocumentTextIcon class="w-4 h-4" /> Expense Breakdown (PDF)
               </button>
             </div>
           </div>
@@ -172,10 +173,10 @@ function exportPDF(title, type) {
             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Track school assets and stock levels.</p>
             <div style="display:flex;flex-direction:column;gap:8px;">
               <button class="btn btn-ghost" style="justify-content:flex-start;" @click="exportPDF('Low Stock Alert Report', 'Inventory')">
-                📄 Low Stock Alerts (PDF)
+                <DocumentTextIcon class="w-4 h-4" /> Low Stock Alerts (PDF)
               </button>
               <button class="btn btn-ghost" style="justify-content:flex-start;" @click="exportPDF('Asset Valuation List', 'Inventory')">
-                📄 Full Asset List (PDF)
+                <DocumentTextIcon class="w-4 h-4" /> Full Asset List (PDF)
               </button>
             </div>
           </div>

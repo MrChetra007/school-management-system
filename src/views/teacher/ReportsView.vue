@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabase'
 import { formatDate } from '@/utils/formatDate'
+import { ChartBarIcon, DocumentTextIcon, DocumentIcon, ChartBarSquareIcon } from '@heroicons/vue/24/outline'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 
@@ -78,7 +79,7 @@ function printClassList() {
     </div>
 
     <div v-else-if="!classInfo" class="empty-state">
-      <div class="empty-state-icon">📊</div>
+      <div class="empty-state-icon"><ChartBarIcon class="w-12 h-12 text-gray-400" /></div>
       <p class="empty-state-title">No Class Assigned</p>
     </div>
 
@@ -90,7 +91,7 @@ function printClassList() {
           <div class="card-body">
             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Download the official list of students in your class.</p>
             <button class="btn btn-ghost w-full" style="justify-content:flex-start;" @click="printClassList">
-              📄 Download Student List (PDF)
+              <DocumentIcon class="w-4 h-4" /> Download Student List (PDF)
             </button>
           </div>
         </div>
@@ -100,7 +101,7 @@ function printClassList() {
           <div class="card-body">
             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">View monthly attendance trends for your class.</p>
             <button class="btn btn-ghost w-full" style="justify-content:flex-start;" disabled>
-              📊 Attendance Trends (Coming Soon)
+              <DocumentTextIcon class="w-4 h-4" /> Attendance Trends (Coming Soon)
             </button>
           </div>
         </div>
@@ -110,7 +111,7 @@ function printClassList() {
           <div class="card-body">
             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Analyze the average performance of your students.</p>
             <button class="btn btn-ghost w-full" style="justify-content:flex-start;" disabled>
-              📈 Score Distribution (Coming Soon)
+              <ChartBarSquareIcon class="w-4 h-4" /> Score Distribution (Coming Soon)
             </button>
           </div>
         </div>

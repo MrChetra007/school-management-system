@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { MagnifyingGlassIcon } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const studentName = ref('')
@@ -46,7 +47,7 @@ async function handleSearch() {
   <div class="search-view">
     <div class="search-card">
       <div class="search-header">
-        <div class="search-icon">🔍</div>
+        <div class="search-icon"><MagnifyingGlassIcon class="w-12 h-12" /></div>
         <h1 class="search-title">ស្វែងរកលទ្ធផលសិក្សាសិស្ស</h1>
         <p class="search-subtitle">Student Academic Search</p>
       </div>
@@ -119,7 +120,6 @@ async function handleSearch() {
 }
 
 .search-icon {
-  font-size: 48px;
   margin-bottom: 16px;
 }
 

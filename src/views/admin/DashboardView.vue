@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'vue-router'
 import { useAcademicYearStore } from '@/stores/academicYear'
+import { AcademicCapIcon, UserGroupIcon, BuildingOfficeIcon, BookOpenIcon, CurrencyDollarIcon, CheckCircleIcon, ClipboardDocumentListIcon, PlusIcon, PrinterIcon } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
 const yearStore = useAcademicYearStore()
@@ -79,7 +80,7 @@ function fmtDate(d) {
     <!-- Stats -->
     <div class="grid-cols-4" style="margin-bottom:24px;">
       <div class="stat-card">
-        <div class="stat-icon" style="background:var(--primary-100);">👨‍🎓</div>
+        <div class="stat-icon" style="background:var(--primary-100);"><AcademicCapIcon class="w-6 h-6" /></div>
         <div class="stat-info">
           <div class="stat-label">Total Students</div>
           <div class="stat-value">{{ loading ? '—' : fmt(stats.students) }}</div>
@@ -87,7 +88,7 @@ function fmtDate(d) {
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:var(--bg-success);">👩‍🏫</div>
+        <div class="stat-icon" style="background:var(--bg-success);"><UserGroupIcon class="w-6 h-6" /></div>
         <div class="stat-info">
           <div class="stat-label">Teachers</div>
           <div class="stat-value">{{ loading ? '—' : fmt(stats.teachers) }}</div>
@@ -95,7 +96,7 @@ function fmtDate(d) {
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:var(--bg-purple);">🏫</div>
+        <div class="stat-icon" style="background:var(--bg-purple);"><BuildingOfficeIcon class="w-6 h-6" /></div>
         <div class="stat-info">
           <div class="stat-label">Classes</div>
           <div class="stat-value">{{ loading ? '—' : fmt(stats.classes) }}</div>
@@ -103,7 +104,7 @@ function fmtDate(d) {
         </div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon" style="background:var(--bg-warning);">📚</div>
+        <div class="stat-icon" style="background:var(--bg-warning);"><BookOpenIcon class="w-6 h-6" /></div>
         <div class="stat-info">
           <div class="stat-label">Library Books</div>
           <div class="stat-value">{{ loading ? '—' : fmt(stats.books) }}</div>
@@ -115,7 +116,7 @@ function fmtDate(d) {
     <!-- Budget row -->
     <div class="grid-cols-2" style="margin-bottom:24px;">
       <div class="stat-card">
-        <div class="stat-icon" style="background:var(--bg-success);">💰</div>
+        <div class="stat-icon" style="background:var(--bg-success);"><CurrencyDollarIcon class="w-6 h-6" /></div>
         <div class="stat-info">
           <div class="stat-label">Total Income</div>
           <div class="stat-value" style="color:var(--color-success);">${{ loading ? '—' : fmt(stats.budget_income) }}</div>
@@ -144,7 +145,7 @@ function fmtDate(d) {
           <div v-for="i in 4" :key="i" class="skeleton" style="height:36px;margin-bottom:10px;border-radius:8px;"></div>
         </div>
         <div v-else-if="recentStudents.length === 0" class="empty-state">
-          <div class="empty-state-icon">🎓</div>
+          <div class="empty-state-icon"><AcademicCapIcon class="w-12 h-12 text-gray-400" /></div>
           <p class="empty-state-title">No students yet</p>
         </div>
         <div v-else class="table-wrapper">
@@ -176,7 +177,7 @@ function fmtDate(d) {
           <div v-for="i in 4" :key="i" class="skeleton" style="height:36px;margin-bottom:10px;border-radius:8px;"></div>
         </div>
         <div v-else-if="overdueBooks.length === 0" class="empty-state">
-          <div class="empty-state-icon">✅</div>
+          <div class="empty-state-icon"><CheckCircleIcon class="w-12 h-12 text-gray-400" /></div>
           <p class="empty-state-title">No overdue books</p>
         </div>
         <div v-else class="table-wrapper">
@@ -198,11 +199,11 @@ function fmtDate(d) {
     <div class="card" style="margin-top:20px;">
       <div class="card-header"><span class="card-title">Quick Actions</span></div>
       <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;">
-        <button class="btn btn-primary" @click="router.push('/admin/students')">➕ Add Student</button>
-        <button class="btn btn-secondary" @click="router.push('/admin/teachers')">➕ Add Teacher</button>
-        <button class="btn btn-secondary" @click="router.push('/admin/attendance/students')">📋 Take Attendance</button>
-        <button class="btn btn-secondary" @click="router.push('/admin/budget')">💰 Add Transaction</button>
-        <button class="btn btn-secondary" @click="router.push('/admin/reports')">🖨 Print Report</button>
+        <button class="btn btn-primary" @click="router.push('/admin/students')"><PlusIcon class="w-4 h-4" /> Add Student</button>
+        <button class="btn btn-secondary" @click="router.push('/admin/teachers')"><PlusIcon class="w-4 h-4" /> Add Teacher</button>
+        <button class="btn btn-secondary" @click="router.push('/admin/attendance/students')"><ClipboardDocumentListIcon class="w-4 h-4" /> Take Attendance</button>
+        <button class="btn btn-secondary" @click="router.push('/admin/budget')"><CurrencyDollarIcon class="w-4 h-4" /> Add Transaction</button>
+        <button class="btn btn-secondary" @click="router.push('/admin/reports')"><PrinterIcon class="w-4 h-4" /> Print Report</button>
       </div>
     </div>
   </div>
