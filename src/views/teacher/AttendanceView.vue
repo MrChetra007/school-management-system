@@ -31,10 +31,12 @@ async function loadData() {
   loading.value = true
   const teacherId = auth.teacherProfile.id
 
+  // Get Class (Filter by active academic year to avoid multiple rows)
   const { data: classData } = await supabase
     .from('classes')
-    .select('*')
+    .select('*, academic_years!inner(status)')
     .eq('teacher_id', teacherId)
+    .eq('academic_years.status', 'active')
     .maybeSingle()
   
   if (classData) {

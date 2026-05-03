@@ -40,8 +40,9 @@ async function loadData() {
 
   const { data: classData } = await supabase
     .from('classes')
-    .select('*, academic_years(id, year_name)')
+    .select('*, academic_years!inner(id, year_name, status)')
     .eq('teacher_id', teacherId)
+    .eq('academic_years.status', 'active')
     .maybeSingle()
   
   if (classData) {

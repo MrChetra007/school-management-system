@@ -42,6 +42,9 @@ export const useAuthStore = defineStore('auth', () => {
         .maybeSingle()
       teacherProfile.value = tData
       
+      console.log('AuthStore: Profile loaded:', data)
+      console.log('AuthStore: Teacher profile loaded:', tData)
+      
     } catch (e) {
       console.error('AuthStore: Error fetching profile:', e)
     }

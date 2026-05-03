@@ -55,15 +55,22 @@ async function handleCheckIn() {
 async function loadData() {
   loading.value = true
   const teacherId = auth.teacherProfile.id
+  console.log('TeacherDashboard: Loading data for teacherId:', teacherId)
   
-  // 1. Get Class Info
-  const { data: classData } = await supabase
+  // 1. Get Class Info (Filter by active academic year to avoid multiple rows)
+  const { data: classData, error: classError } = await supabase
     .from('classes')
-    .select('*, academic_years(year_name)')
+    .select('*, academic_years!inner(year_name, status)')
     .eq('teacher_id', teacherId)
+    .eq('academic_years.status', 'active')
     .maybeSingle()
   
+  if (classError) {
+    console.error('TeacherDashboard: Error fetching class:', classError)
+  }
+
   if (classData) {
+    console.log('TeacherDashboard: Class found:', classData)
     classInfo.value = classData
     
     // 2. Get Student Count
